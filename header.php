@@ -13,8 +13,57 @@
         <div class="header-content">
             <div class="logo-container">
                 <a href="<?php echo esc_url(home_url('/')); ?>" class="logo-link">
-                    <img src="<?php echo get_template_directory_uri(); ?>/resources/it_logo_2024.svg" alt="IT Studio Logo" class="logo-it">
-                    <img src="<?php echo get_template_directory_uri(); ?>/resources/ouc-logo.svg" alt="OUC Logo" class="logo-ouc">
+                    <svg class="logo-main" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="260" height="70" viewBox="0 0 260 70">
+                        <defs>
+                            <style>
+                                .cls-1 { fill: #f8d1d9; }
+                                .cls-1, .cls-2, .cls-3 { fill-rule: evenodd; }
+                                .cls-2 { fill: #bab5ec; }
+                                .cls-3 { fill: url(#linear-gradient); }
+                                .text-group {
+                                    font-family: "PingFang SC", "Microsoft YaHei", "Heiti SC", sans-serif;
+                                    text-anchor: middle;
+                                }
+                                .text-cn {
+                                    font-size: 26px;
+                                    font-weight: 800;
+                                }
+                                .text-en {
+                                    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    letter-spacing: 3px;
+                                    fill: #8e88c7;
+                                    text-transform: uppercase;
+                                }
+                                .deco-solid-circle { fill: #f1b7bf; }
+                                .deco-hollow-circle { fill: none; stroke: #bab5ec; stroke-width: 2; }
+                                .deco-plus { stroke: #bab5ec; stroke-width: 3; stroke-linecap: round; }
+                                .deco-square { fill: #bab5ec; opacity: 0.8; }
+                                .deco-line { stroke: #f8d1d9; stroke-width: 3; stroke-linecap: round; }
+                            </style>
+                            <linearGradient id="linear-gradient" x1="19.41" y1="66" x2="44.59" y2="12" gradientUnits="userSpaceOnUse">
+                                <stop offset="0" stop-color="#bab5ec"/>
+                                <stop offset="1" stop-color="#f1b7bf"/>
+                            </linearGradient>
+                        </defs>
+                        <g id="decorations">
+                            <rect class="deco-square" x="5" y="8" width="6" height="6" transform="rotate(15 8 11)" />
+                            <path class="deco-plus" d="M78 20 L88 20 M83 15 L83 25" />
+                            <circle class="deco-hollow-circle" cx="245" cy="15" r="5" />
+                            <circle class="deco-solid-circle" cx="235" cy="55" r="4" />
+                            <path class="deco-line" d="M250 60 L256 54" />
+                        </g>
+                        <g id="logo-main" transform="translate(12, 2) scale(0.95)">
+                            <path id="cls-1" class="cls-1" d="M0,17L30,0V39L0,57V17Z"/>
+                            <path id="cls-2" class="cls-2" d="M33,39L62,56V17L33,0V39Z"/>
+                            <path id="cls-3" data-name="cls-3" class="cls-3" d="M18,28L46,12V49L18,66V28Z"/>
+                        </g>
+                        <g class="text-group" transform="translate(165, 0)">
+                            <text y="38" class="text-cn" fill="currentColor">爱特工作室</text>
+                            <text y="56" class="text-en">IT Studio</text>
+                        </g>
+                    </svg>
                 </a>
             </div>
 
@@ -26,15 +75,18 @@
                 </button>
 
                 <ul class="nav-menu">
-                    <li><a href="<?php echo esc_url(home_url('/')); ?>"><?php _e('首页', 'itstudio'); ?></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/announcements')); ?>"><?php _e('公告通知', 'itstudio'); ?></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/blog')); ?>"><?php _e('技术博客', 'itstudio'); ?></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/services')); ?>"><?php _e('便民服务', 'itstudio'); ?></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/about')); ?>"><?php _e('工作室介绍', 'itstudio'); ?></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/join')); ?>"><?php _e('加入我们', 'itstudio'); ?></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/')); ?>" data-cn="首页" data-en="Home"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/announcements')); ?>" data-cn="公告通知" data-en="Events"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/blog')); ?>" data-cn="技术博客" data-en="Blog"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/services')); ?>" data-cn="便民服务" data-en="Service"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/about')); ?>" data-cn="工作室介绍" data-en="Introduction"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/join')); ?>" data-cn="加入我们" data-en="Join"></a></li>
                 </ul>
 
                 <div class="social-links">
+                    <button class="lang-toggle" aria-label="Toggle Language">
+                        <span class="lang-text">EN</span>
+                    </button>
                     <a href="https://github.com/itstudio-2002" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>

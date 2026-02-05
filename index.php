@@ -4,7 +4,7 @@
     <section class="hero-section">
         <div class="container">
             <div class="hero-content">
-                <h1><?php _e('IT Studio', 'itstudio'); ?></h1>
+                <h1><?php _e('IT STUDIO', 'itstudio'); ?></h1>
                 <p class="hero-description">
                     <?php _e('爱特工作室成立于2002年，致力于发现人才、培养人才、输送人才。现已拥有UI设计、Web开发、程序设计、Android开发、游戏设计、iOS开发六大技术方向，是海大网络技术的中坚力量！', 'itstudio'); ?>
                 </p>
@@ -16,7 +16,7 @@
         <div class="container">
             <div class="content-grid">
                 <div class="announcements-column">
-                    <h2><?php _e('公告通知', 'itstudio'); ?> <span class="subtitle">Announcements</span></h2>
+                    <h2 data-cn="公告通知" data-en="Announcements"></h2>
                     <div class="post-list">
                         <?php
                         $announcements = new WP_Query(array(
@@ -44,7 +44,7 @@
                 </div>
 
                 <div class="blog-column">
-                    <h2><?php _e('技术博客', 'itstudio'); ?> <span class="subtitle">Tech Blog</span></h2>
+                    <h2 data-cn="技术博客" data-en="Tech Blog"></h2>
                     <div class="post-list">
                         <?php
                         $blogs = new WP_Query(array(
