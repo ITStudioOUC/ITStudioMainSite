@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="260" height="70" viewBox="0 0 260 70">
+    <defs>
+        <style>
+            /* 原始Logo样式 */
+            .cls-1 { fill: #f8d1d9; }
+            .cls-1, .cls-2, .cls-3 { fill-rule: evenodd; }
+            .cls-2 { fill: #bab5ec; }
+            .cls-3 { fill: url(#linear-gradient); }
+
+            /* 文字样式 */
+            .text-group {
+            font-family: "PingFang SC", "Microsoft YaHei", "Heiti SC", sans-serif;
+            text-anchor: middle;
+            }
+            .text-cn {
+            font-size: 26px;
+            font-weight: 800;
+            fill: #333333;
+            }
+            .text-en {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            fill: #8e88c7;
+            text-transform: uppercase;
+            }
+
+            /* 装饰元素样式 */
+            .deco-solid-circle { fill: #f1b7bf; }
+            .deco-hollow-circle { fill: none; stroke: #bab5ec; stroke-width: 2; }
+            .deco-plus { stroke: #bab5ec; stroke-width: 3; stroke-linecap: round; }
+            .deco-square { fill: #bab5ec; opacity: 0.8; }
+            .deco-line { stroke: #f8d1d9; stroke-width: 3; stroke-linecap: round; }
+        </style>
+        <linearGradient id="linear-gradient" x1="19.41" y1="66" x2="44.59" y2="12" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#bab5ec"/>
+            <stop offset="1" stop-color="#f1b7bf"/>
+        </linearGradient>
+    </defs>
+
+    <!-- 装饰元素组 -->
+    <g id="decorations">
+        <!-- 左上角：实心小方块 (已修复坐标，向右下方移动) -->
+        <rect class="deco-square" x="5" y="8" width="6" height="6" transform="rotate(15 8 11)" />
+
+        <!-- Logo与文字之间：加粗的十字星 -->
+        <path class="deco-plus" d="M78 20 L88 20 M83 15 L83 25" />
+
+        <!-- 右上角：空心圆环 -->
+        <circle class="deco-hollow-circle" cx="245" cy="15" r="5" />
+
+        <!-- 右下角：实心圆点 -->
+        <circle class="deco-solid-circle" cx="235" cy="55" r="4" />
+
+        <!-- 底部装饰线 -->
+        <path class="deco-line" d="M250 60 L256 54" />
+    </g>
+
+    <!-- 原Logo主体 -->
+    <g id="logo-main" transform="translate(12, 2) scale(0.95)">
+        <path id="cls-1" class="cls-1" d="M0,17L30,0V39L0,57V17Z"/>
+        <path id="cls-2" class="cls-2" d="M33,39L62,56V17L33,0V39Z"/>
+        <path id="cls-3" data-name="cls-3" class="cls-3" d="M18,28L46,12V49L18,66V28Z"/>
+    </g>
+
+    <!-- 文字部分 -->
+    <g class="text-group" transform="translate(165, 0)">
+        <text y="38" class="text-cn">爱特工作室</text>
+        <text y="56" class="text-en">IT Studio</text>
+    </g>
+</svg>
