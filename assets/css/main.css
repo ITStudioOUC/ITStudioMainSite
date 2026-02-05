@@ -143,12 +143,144 @@
   color: var(--accent-color);
 }
 
+body[lang="en"] .hero-content h1::before {
+  content: attr(data-en);
+}
+
+body:not([lang="en"]) .hero-content h1::before {
+  content: attr(data-cn);
+}
+
+.hero-content h1 {
+  font-size: 0;
+}
+
+.hero-content h1::before {
+  font-size: 3rem;
+}
+
 .hero-description {
   font-size: 1.125rem;
   line-height: 1.8;
   max-width: 800px;
   margin: 0 auto;
   color: var(--text-color);
+}
+
+body[lang="en"] .hero-description::before {
+  content: attr(data-en);
+}
+
+body:not([lang="en"]) .hero-description::before {
+  content: attr(data-cn);
+}
+
+.hero-description {
+  font-size: 0;
+}
+
+.hero-description::before {
+  font-size: 1.125rem;
+}
+
+.services-provided {
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+}
+
+.services-provided h2 {
+  font-size: 1.75rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+  text-align: left;
+}
+
+body[lang="en"] .services-provided h2::before {
+  content: attr(data-en);
+}
+
+body:not([lang="en"]) .services-provided h2::before {
+  content: attr(data-cn);
+}
+
+.services-provided h2 {
+  font-size: 0;
+}
+
+.services-provided h2::before {
+  font-size: 1.75rem;
+}
+
+.services-grid-box {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.service-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  text-decoration: none;
+}
+
+
+.service-icon {
+  margin-bottom: 1rem;
+}
+
+.service-icon svg {
+  width: 96px;
+  height: 96px;
+}
+
+.service-item span {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+body[lang="en"] .service-item span::before {
+  content: attr(data-en);
+}
+
+body:not([lang="en"]) .service-item span::before {
+  content: attr(data-cn);
+}
+
+.service-item span {
+  font-size: 0;
+}
+
+.service-item span::before {
+  font-size: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .services-grid-box {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .services-grid-box {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .service-icon svg {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .services-grid-box {
+    grid-template-columns: 1fr;
+  }
 }
 
 .content-section {
@@ -246,6 +378,22 @@ body:not([lang="en"]) h2[data-cn]::before {
   color: var(--text-color);
 }
 
+body[lang="en"] .footer-section h3::before {
+  content: attr(data-en);
+}
+
+body:not([lang="en"]) .footer-section h3::before {
+  content: attr(data-cn);
+}
+
+.footer-section h3 {
+  font-size: 0;
+}
+
+.footer-section h3::before {
+  font-size: 1.125rem;
+}
+
 .footer-links {
   list-style: none;
 }
@@ -259,6 +407,22 @@ body:not([lang="en"]) h2[data-cn]::before {
   font-size: 0.9rem;
 }
 
+body[lang="en"] .footer-links a::before {
+  content: attr(data-en);
+}
+
+body:not([lang="en"]) .footer-links a::before {
+  content: attr(data-cn);
+}
+
+.footer-links a[data-cn] {
+  font-size: 0;
+}
+
+.footer-links a[data-cn]::before {
+  font-size: 0.9rem;
+}
+
 .footer-bottom {
   text-align: center;
   padding-top: 2rem;
@@ -268,6 +432,22 @@ body:not([lang="en"]) h2[data-cn]::before {
 .footer-bottom p {
   font-size: 0.875rem;
   color: var(--gray-500);
+}
+
+body[lang="en"] .footer-bottom p::before {
+  content: attr(data-en);
+}
+
+body:not([lang="en"]) .footer-bottom p::before {
+  content: attr(data-cn);
+}
+
+.footer-bottom p {
+  font-size: 0;
+}
+
+.footer-bottom p::before {
+  font-size: 0.875rem;
 }
 
 @media (max-width: 1024px) {
