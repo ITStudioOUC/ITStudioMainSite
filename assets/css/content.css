@@ -1,5 +1,140 @@
 /* =========================================
-   GitHub "Pro" Blog Style Layout
+   内容与页面样式 (Content & Pages) - 通用与首页
+   ========================================= */
+
+.site-main {
+  flex: 1 0 auto;
+  width: 100%;
+  padding-top: 0;
+}
+
+/* --- 首页内容区块容器 --- */
+.content-section {
+  padding: 80px 0;
+  background-color: var(--bg-body);
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 默认两列 (公告 + 博客) */
+  gap: 60px;
+}
+
+/* 首页栏目标题 */
+.announcements-column h2,
+.blog-column h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-default);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+}
+
+/* 终端风格前缀 */
+.announcements-column h2::before,
+.blog-column h2::before {
+  content: ">";
+  margin-right: 10px;
+  color: var(--color-primary);
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+/* --- 首页文章列表 (卡片式) --- */
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.post-item {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  transition: all var(--duration-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.post-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.post-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-primary);
+}
+
+.post-title {
+  margin: 0 0 12px 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.post-title a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.post-item:hover .post-title a {
+  color: var(--color-primary);
+}
+
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: auto; /* Push meta to bottom */
+  padding-top: 16px;
+  border-top: 1px solid var(--border-muted);
+}
+
+.post-author {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.post-author::before {
+  content: "@";
+  color: var(--color-purple);
+  margin-right: 2px;
+}
+
+.post-excerpt {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  opacity: 0.9;
+  margin-bottom: 16px;
+  /* 限制行数 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- 响应式适配 (首页) --- */
+@media (max-width: 768px) {
+  .content-grid {
+    grid-template-columns: 1fr; /* 单列显示 */
+    gap: 40px;
+  }
+}
+
+/* =========================================
+   GitHub 风格博客
    ========================================= */
 
 .single-post-gh-pro {
