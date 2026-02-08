@@ -1,0 +1,158 @@
+/* =========================================
+   首页独有样式 (Front Page / Hero)
+   ========================================= */
+
+/* --- Hero 区域 --- */
+.hero-section {
+  padding: 120px 0 80px;
+  background-color: var(--bg-body);
+  position: relative;
+  overflow: hidden;
+
+  /* 科技网格背景 */
+  background-image:
+    linear-gradient(var(--border-muted) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-muted) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center top;
+}
+
+/* 底部渐变遮罩 */
+.hero-section::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent, var(--bg-body));
+  pointer-events: none;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* 大标题 */
+.hero-content h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--color-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+/* 描述文本 (代码风格) */
+.hero-description {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+  font-family: var(--font-mono);
+  min-height: 3.6em; /* 预留高度防止抖动 */
+}
+
+/* --- 流式输出字符样式 --- */
+.stream-char {
+  transition: opacity 0.4s ease; /* 平滑淡入 */
+}
+
+/* --- 服务展示区 (Services) --- */
+.services-provided {
+  margin-top: 5rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* 标题带有命令提示符风格 */
+.services-provided h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: none;
+  color: var(--text-primary);
+  display: flex; /* 改为 flex 以支持全宽下划线 */
+  align-items: center;
+}
+
+.services-provided h2::before {
+  content: "$";
+  color: var(--color-primary); /* 统一使用蓝色，保持与 blog h2 风格一致 */
+  margin-right: 10px; /* 保持与 blog h2 一致的间距 */
+  font-family: var(--font-mono);
+  font-weight: 800;
+}
+
+/* 服务卡片网格 */
+.services-grid-box {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding: 0 10px;
+}
+
+.service-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all var(--duration-fast);
+  text-decoration: none;
+}
+
+.service-item:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-lg);
+}
+
+.service-icon {
+  margin-bottom: 1.5rem;
+  color: var(--color-primary);
+  /* 确保 SVG 继承颜色 */
+}
+
+.service-icon svg {
+  width: 80px;
+  height: 80px;
+  display: block;
+}
+
+.service-item span {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+/* --- 响应式适配 --- */
+@media (max-width: 1100px) {
+  .services-grid-box {
+    grid-template-columns: repeat(2, 1fr); /* 平板/小屏变 2 列 */
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-content h1 {
+    font-size: 2.25rem;
+  }
+
+  .hero-description {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .services-grid-box {
+    grid-template-columns: 1fr; /* 手机端单列 */
+  }
+}

@@ -1,0 +1,66 @@
+/* =========================================
+   页脚布局 (Footer)
+   ========================================= */
+
+.site-footer {
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-default);
+  padding: 4rem 0 2rem;
+  margin-top: auto; /* 确保置底 */
+  flex-shrink: 0; /* 防止Footer被压缩 */
+}
+
+/* --- 页脚内容网格 --- */
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4列布局 */
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.footer-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.footer-links li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-links a {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.footer-links a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* --- 底部版权区 --- */
+.footer-bottom {
+  border-top: 1px solid var(--border-muted);
+  padding-top: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* --- 响应式适配 --- */
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: repeat(2, 1fr); /* 平板 2列 */
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-content {
+    grid-template-columns: 1fr; /* 手机 1列 */
+  }
+
+  .site-footer {
+    padding: 3rem 0 1.5rem;
+  }
+}

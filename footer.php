@@ -5,7 +5,7 @@
                 <h3 data-cn="友情链接" data-en="Links"></h3>
                 <ul class="footer-links">
                     <li><a href="https://www.ouc.edu.cn" target="_blank" rel="noopener" data-cn="中国海洋大学" data-en="Ocean University of China"></a></li>
-                    <li><a href="https://cst.ouc.edu.cn" target="_blank" rel="noopener" data-cn="信息科学与工程学部" data-en="College of Computer Science"></a></li>
+                    <li><a href="https://it.ouc.edu.cn" target="_blank" rel="noopener" data-cn="信息科学与工程学部" data-en="Faculty of Information Science and Engineering"></a></li>
                 </ul>
             </div>
 

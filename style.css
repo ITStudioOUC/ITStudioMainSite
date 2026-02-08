@@ -2,7 +2,7 @@
 Theme Name: IT Studio Theme
 Theme URI: https://github.com/itstudio-2002/ITStudioMainSite
 Description: 中国海洋大学爱特工作室官方网站主题 - A modern WordPress theme for IT Studio of Ocean University of China
-Version: 1.0.0
+Version: 2.1.0
 Author: IT Studio
 Author URI: https://it.ouc.edu.cn
 License: MIT
@@ -11,75 +11,117 @@ Text Domain: itstudio
 Tags: responsive, modern, dark-mode, bilingual
 */
 
+/* =========================================
+   1. 设计令牌 (Design Tokens) - 全局变量
+   ========================================= */
 :root {
-  --ocean-light-blue: #f0f8ff;
-  --ocean-deep-blue: #0a1929;
-  --accent-color: #8e88c7;
-  --white: #ffffff;
-  --black: #000000;
-  --gray-100: #f5f5f5;
-  --gray-200: #e0e0e0;
-  --gray-300: #bdbdbd;
-  --gray-400: #9e9e9e;
-  --gray-500: #757575;
-  --gray-600: #616161;
-  --gray-700: #424242;
-  --gray-800: #303030;
-  --gray-900: #212121;
+  /* --- 调色板: 海洋与极客 --- */
+  --color-primary: #0969da;        /* 核心蓝：用于链接、主按钮 */
+  --color-primary-light: #58a6ff;  /* 亮蓝：用于深色模式主色 */
+  --color-success: #2dba4e;        /* 成功绿：代码风格点缀 */
+  --color-purple: #8957e5;         /* 极客紫：强调色 */
+  --color-danger: #cf222e;         /* 警告红 */
 
-  --bg-color: var(--ocean-light-blue);
-  --text-color: var(--black);
-  --header-bg: var(--white);
-  --footer-bg: var(--gray-100);
-  --border-color: var(--gray-200);
+  /* --- 主题色: 浅色模式 (Light) --- */
+  --bg-body: #ffffff;             /* 页面背景 */
+  --bg-surface: #f6f8fa;          /* 次级背景 (Sidebar/Footer) */
+  --bg-card: #ffffff;             /* 卡片背景 */
+  --text-primary: #24292f;        /* 主要文字 */
+  --text-secondary: #343a40;      /* 次要文字 */
+  --border-default: #d0d7de;      /* 默认边框 */
+  --border-muted: #d8dee4;        /* 淡边框 */
 
-  --transition-speed: 0.3s;
+  --shadow-sm: 0 1px 3px rgba(140, 149, 159, 0.12);
+  --shadow-md: 0 4px 12px rgba(140, 149, 159, 0.15);
+  --shadow-lg: 0 8px 24px rgba(140, 149, 159, 0.2);
+
+  /* --- 排版 (Typography) --- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", "Menlo", "Consolas", monospace;
+
+  /* --- 布局 (Layout) --- */
+  --header-height: 90px;
+  --container-width: 1400px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+
+  /* --- 动画 (Animation) --- */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 0.2s;
+  --duration-normal: 0.3s;
 }
 
+/* --- 主题色: 深色模式 (Dark) --- */
 [data-theme="dark"] {
-  --bg-color: var(--ocean-deep-blue);
-  --text-color: var(--white);
-  --header-bg: #0d1f30;
-  --footer-bg: #050f1a;
-  --border-color: var(--gray-700);
+  --color-primary: #58a6ff;       /* 深色模式下蓝色需要更亮 */
+
+  --bg-body: #0d1117;             /* 深邃蓝黑 (Github Dark) */
+  --bg-surface: #161b22;
+  --bg-card: #161b22;
+  --text-primary: #c9d1d9;        /* 灰白 */
+  --text-secondary: #6d737c;      /* 灰 */
+  --border-default: #30363d;
+  --border-muted: #21262d;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.8);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* =========================================
+   2. 全局重置 (Reset & Base)
+   ========================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  min-height: 100vh; /* 确保HTML高度撑满 */
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
+  font-family: var(--font-sans);
+  background-color: var(--bg-body);
+  color: var(--text-primary);
   line-height: 1.6;
-  transition: background-color var(--transition-speed), color var(--transition-speed);
-  min-height: 100vh;
+  transition: background-color var(--duration-normal), color var(--duration-normal);
+  -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
-  position: relative;
+  min-height: 100vh; /* 确保Body高度撑满并使用Flex布局 */
 }
 
 a {
-  color: var(--accent-color);
+  color: var(--color-primary);
   text-decoration: none;
-  transition: opacity var(--transition-speed);
+  transition: opacity var(--duration-fast);
 }
+a:hover { opacity: 0.85; }
 
-a:hover {
-  opacity: 0.8;
-}
+ul { list-style: none; }
+button { font-family: inherit; }
+img { max-width: 100%; height: auto; display: block; }
+svg { fill: currentColor; }
 
+/* =========================================
+   3. 全局工具类 (Global Utilities)
+   ========================================= */
 .container {
-  max-width: 1200px;
+  max-width: var(--container-width);
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
+  width: 100%;
 }
 
-@media (max-width: 768px) {
-  .container {
-    padding: 0 15px;
-  }
+/* 双语内容自动填充系统 */
+/* 中文模式：填充 data-cn 到伪元素 */
+body:not([lang="en"]) [data-cn]:not(.hero-description):not(.gh-state):empty::before {
+  content: attr(data-cn);
 }
+
+/* 英文模式：填充 data-en 到伪元素 */
+body[lang="en"] [data-en]:not(.hero-description):not(.gh-state):empty::before {
+  content: attr(data-en);
+}
+
+/* WordPress Admin Bar 兼容性修复 */
+body.admin-bar .site-header { top: 32px; }
+@media screen and (max-width: 782px) { body.admin-bar .site-header { top: 46px; } }

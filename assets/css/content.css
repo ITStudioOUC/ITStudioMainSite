@@ -1,0 +1,383 @@
+/* =========================================
+   GitHub "Pro" Blog Style Layout
+   ========================================= */
+
+.single-post-gh-pro {
+  padding-bottom: 4rem;
+}
+
+/* --- Pro Header (Clean Geek Style) --- */
+.gh-pro-header {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  text-align: center; /* Center alignment looks more like a blog title */
+}
+
+.gh-pro-meta-top {
+  margin-bottom: 16px;
+}
+
+.gh-label-category {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gh-pro-header .entry-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  line-height: 1.25;
+}
+
+.gh-pro-meta-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.gh-author-lockup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gh-author-lockup img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border-muted);
+}
+
+.gh-author-lockup .author-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.meta-divider {
+  color: var(--border-default);
+}
+
+/* --- File Box Body (The Article) --- */
+.gh-pro-body-container {
+  max-width: 900px; /* Slightly wider read area */
+  margin: 0 auto 48px;
+}
+
+.gh-file-box {
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background-color: var(--bg-card);
+  overflow: hidden;
+}
+
+.gh-file-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.gh-file-header .file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gh-file-header .octicon {
+  fill: currentColor;
+}
+
+.gh-file-header strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.gh-file-content {
+  padding: 32px 40px;
+  background-color: var(--bg-card);
+}
+
+/* Entry Content Typography (Markdown Style) */
+.gh-file-content {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  overflow-wrap: break-word; /* 自动换行 */
+  word-wrap: break-word;
+}
+
+.gh-file-content p { margin-bottom: 1.5em; }
+.gh-file-content h2 { border-bottom: 1px solid var(--border-muted); padding-bottom: 0.3em; margin-top: 1.5em; margin-bottom: 1em; }
+.gh-file-content code { background-color: rgba(175, 184, 193, 0.2); padding: 0.2em 0.4em; border-radius: 6px; font-size: 85%; font-family: var(--font-mono); }
+.gh-file-content pre { padding: 16px; overflow: auto; line-height: 1.45; background-color: var(--bg-surface); border-radius: 6px; }
+
+.gh-file-footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-muted);
+}
+
+/* --- Comments Section (Pro Timeline) --- */
+.gh-pro-comments {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.timeline-header h3 {
+  font-size: 1.25rem;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-default);
+  padding-bottom: 8px;
+}
+
+/* Reuse existing gh-timeline styles from previous step but center align */
+.gh-timeline {
+  margin-top: 0;
+  margin-left: 0; /* Clear previous offset */
+}
+
+/* Vertical Timeline Line - NEW FIX */
+.gh-timeline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 20px; /* Center of 40px avatar */
+  width: 2px;
+  background-color: var(--border-muted);
+  z-index: 0;
+  display: block; /* Ensure it is displayed */
+}
+
+/* Fix z-index for items so line is behind */
+.gh-timeline-item {
+  position: relative;
+  z-index: 1;
+}
+
+ol.comment-list {
+  list-style: none; /* 去掉列表默认样式 */
+  padding: 0;
+  margin: 0;
+}
+
+/* Timeline Item (Main Post & Comments) */
+.gh-timeline-item,
+.gh-comment-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Avatar Column */
+.gh-avatar,
+.gh-comment-avatar {
+  flex-shrink: 0;
+  width: 40px;
+}
+
+.gh-avatar img,
+.gh-comment-avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-muted);
+}
+
+/* Content Box (Speech Bubble) */
+.gh-item-box,
+.gh-comment-box {
+  flex-grow: 1;
+  min-width: 0;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background-color: var(--bg-card);
+  position: relative;
+}
+
+/* Speech Bubble Beak (Arrow) - Desktop Only */
+@media (min-width: 768px) {
+  .gh-item-box::before, .gh-item-box::after,
+  .gh-comment-box::before, .gh-comment-box::after {
+    content: " ";
+    position: absolute;
+    top: 11px;
+    right: 100%;
+    height: 0;
+    width: 0;
+    border: solid transparent;
+    pointer-events: none;
+  }
+
+  .gh-item-box::after,
+  .gh-comment-box::after {
+    border-right-color: var(--bg-surface); /* Header BG color */
+    border-width: 7px;
+    margin-top: -7px;
+  }
+
+  .gh-item-box::before,
+  .gh-comment-box::before {
+    border-right-color: var(--border-default);
+    border-width: 8px;
+    margin-top: -8px;
+  }
+}
+
+/* Box Header */
+.gh-box-header,
+.gh-comment-header {
+  padding: 8px 16px;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.gh-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.gh-comment-meta,
+.gh-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.gh-header-meta strong,
+.gh-author-name a {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.gh-header-meta a,
+.gh-comment-meta time,
+.gh-comment-meta a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.gh-header-meta a:hover,
+.gh-comment-meta time:hover,
+.gh-comment-meta a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Badge (Author/Member) */
+.gh-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  border-radius: 2em;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+/* Box Body */
+.gh-box-body,
+.gh-comment-body {
+  padding: 16px;
+  background-color: var(--bg-card);
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  overflow-wrap: break-word;
+}
+
+.gh-box-body .entry-content,
+.gh-comment-body {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Comment Form Styles */
+.gh-comment-form textarea {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.gh-comment-form textarea:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+}
+
+.form-submit {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.gh-comment-form input[type="submit"] {
+  background-color: var(--color-success);
+  color: #fff;
+  border: 1px solid rgba(27, 31, 36, 0.15);
+  border-radius: 6px;
+  padding: 5px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gh-comment-form input[type="submit"]:hover {
+  background-color: #2c974b;
+}
+
+/* Buttons */
+.btn-sm {
+  font-size: 12px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background-color: var(--bg-body);
+  font-weight: 500;
+}
+.btn-sm:hover {
+  background-color: var(--bg-surface);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .gh-file-content { padding: 20px; }
+  .gh-pro-header .entry-title { font-size: 1.75rem; }
+}
