@@ -75,6 +75,7 @@ Tags: responsive, modern, dark-mode, bilingual
 
 html {
   min-height: 100vh; /* 确保HTML高度撑满 */
+  font-size: 18px; /* 增加基础字号 (原默认为16px) */
 }
 
 body {

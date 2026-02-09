@@ -3,7 +3,7 @@
    ========================================= */
 
 .site-header {
-  height: 70px;
+  height: 80px;
   background-color: var(--bg-body);
   border-bottom: 1px solid var(--border-muted);
   position: sticky; /* 粘性定位，确保始终置顶 */
@@ -41,7 +41,7 @@
 }
 
 .logo-main {
-  height: 52px; /* 增大 Logo 尺寸 */
+  height: 60px; /* 增大 Logo 尺寸 (原52px) */
   width: auto;
   color: var(--text-primary);
 }
@@ -64,7 +64,7 @@
 .nav-menu a {
   color: var(--text-secondary);
   font-weight: 500;
-  font-size: 15px;
+  font-size: 16px; /* 增大导航字号 (原15px) */
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   transition: all var(--duration-fast);
@@ -91,8 +91,8 @@
 .social-links a,
 .theme-toggle,
 .lang-toggle {
-  width: 36px;
-  height: 36px;
+  width: 40px; /* 增大图标按钮尺寸 (原36px) */
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -156,9 +156,9 @@ html:not([data-theme="dark"]) .moon-icon {
 /* 语言切换按钮文字 */
 .lang-toggle {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px; /* 增大切换字号 (原14px) */
   width: auto;
-  padding: 0 10px;
+  padding: 0 12px;
 }
 
 /* --- 移动端菜单开关 (Hamburger) --- */
@@ -199,10 +199,27 @@ html:not([data-theme="dark"]) .moon-icon {
   width: 115%;
 }
 
+/* 默认情况：显示主 Logo，隐藏移动端 Logo */
+.logo-mobile {
+  display: none;
+  height: 48px; /* 调整高度 */
+  width: auto;
+}
+
 /* --- 响应式适配 --- */
 @media (max-width: 900px) {
+  /* 移动端隐藏主Logo，显示移动端Logo */
+  .logo-main {
+    display: none;
+  }
+
+  .logo-mobile {
+    display: block;
+  }
+
   .mobile-menu-toggle {
     display: flex;
+    order: 2; /* 放在最右侧 */
   }
 
   .nav-menu {
@@ -222,6 +239,7 @@ html:not([data-theme="dark"]) .moon-icon {
     pointer-events: none;
     transition: all var(--duration-normal) var(--ease-in-out);
     box-shadow: var(--shadow-md);
+    z-index: 1000;
   }
 
   .nav-menu.active {
@@ -240,5 +258,7 @@ html:not([data-theme="dark"]) .moon-icon {
   .social-links {
     border-left: none;
     margin-left: auto; /* 推到右侧 */
+    order: 1; /* 放在 toggle 左侧 */
+    margin-right: 12px; /* 和 toggle 之间增加一点间距 */
   }
 }

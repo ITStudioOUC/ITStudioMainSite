@@ -23,7 +23,7 @@
 /* 首页栏目标题 */
 .announcements-column h2,
 .blog-column h2 {
-  font-size: 1.5rem;
+  font-size: 1.8rem; /* 增大栏目标题 (原1.5rem) */
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid var(--border-default);
@@ -46,13 +46,13 @@
 .post-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px; /* 增大间距 (原16px) */
 }
 
 .post-item {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 24px; /* 增大内边距 (原20px) */
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   background-color: var(--bg-card);
@@ -75,7 +75,7 @@
 
 .post-title {
   margin: 0 0 12px 0;
-  font-size: 1.15rem;
+  font-size: 1.35rem; /* 增大文章标题 (原1.15rem) */
   font-weight: 600;
   line-height: 1.4;
 }
@@ -94,7 +94,7 @@
   align-items: center;
   gap: 16px;
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.95rem; /* 增大元信息 (原0.85rem) */
   color: var(--text-secondary);
   margin-top: auto; /* Push meta to bottom */
   padding-top: 16px;
@@ -113,7 +113,7 @@
 }
 
 .post-excerpt {
-  font-size: 0.95rem;
+  font-size: 1.05rem; /* 增大摘要 (原0.95rem) */
   color: var(--text-secondary);
   line-height: 1.6;
   opacity: 0.9;
@@ -154,7 +154,7 @@
 
 .gh-label-category {
   display: inline-block;
-  font-size: 13px;
+  font-size: 14px; /* 增大标签 (原13px) */
   font-weight: 600;
   color: var(--color-primary);
   text-transform: uppercase;
@@ -162,7 +162,7 @@
 }
 
 .gh-pro-header .entry-title {
-  font-size: 2.5rem;
+  font-size: 3rem; /* 增大文章主标题 (原2.5rem) */
   font-weight: 700;
   margin-bottom: 16px;
   line-height: 1.25;
@@ -173,7 +173,7 @@
   justify-content: center;
   align-items: center;
   gap: 24px;
-  font-size: 14px;
+  font-size: 16px; /* 增大元信息栏 (原14px) */
   color: var(--text-secondary);
   font-family: var(--font-mono);
 }
@@ -247,8 +247,8 @@
 
 /* Entry Content Typography (Markdown Style) */
 .gh-file-content {
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 18px; /* 增大正文基础字号 (原16px) */
+  line-height: 1.8; /* 优化行高 */
   color: var(--text-primary);
   overflow-wrap: break-word; /* 自动换行 */
   word-wrap: break-word;

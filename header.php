@@ -64,6 +64,7 @@
                             <text y="56" class="text-en">IT Studio</text>
                         </g>
                     </svg>
+                    <img src="<?php echo get_template_directory_uri(); ?>/resources/it_logo_2024.svg" class="logo-mobile" alt="IT Studio">
                 </a>
             </div>
 
