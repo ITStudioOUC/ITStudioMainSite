@@ -33,6 +33,19 @@ function itstudio_enqueue_scripts() {
         wp_enqueue_style('itstudio-front-page', get_template_directory_uri() . '/assets/css/front-page.css', array('itstudio-style'), '2.1.2');
     }
 
+    // 仅在工作室介绍页加载（包含 /about fallback）
+    $is_about_fallback = false;
+    if (is_404()) {
+        global $wp;
+        $request = isset($wp->request) ? trim($wp->request, '/') : '';
+        $is_about_fallback = ($request === 'about');
+    }
+
+    if (is_page('about') || is_page_template('page-about.php') || $is_about_fallback) {
+        wp_enqueue_style('itstudio-intro', get_template_directory_uri() . '/assets/css/intro.css', array('itstudio-content'), '2.1.2');
+        wp_enqueue_script('itstudio-intro-scroll', get_template_directory_uri() . '/assets/js/intro-scroll.js', array(), '1.0.0', true);
+    }
+
     // Scripts
     wp_enqueue_script('itstudio-theme-toggle', get_template_directory_uri() . '/assets/js/theme-toggle.js', array(), '1.0.0', true);
     wp_enqueue_script('itstudio-lang-toggle', get_template_directory_uri() . '/assets/js/lang-toggle.js', array(), '1.0.0', true);
@@ -67,6 +80,22 @@ function itstudio_register_sidebars() {
 }
 add_action('widgets_init', 'itstudio_register_sidebars');
 
+function itstudio_intro_body_class($classes) {
+    $is_about = is_page('about') || is_page_template('page-about.php');
+    if (!$is_about && is_404()) {
+        global $wp;
+        $request = isset($wp->request) ? trim($wp->request, '/') : '';
+        $is_about = ($request === 'about');
+    }
+
+    if ($is_about) {
+        $classes[] = 'intro-about';
+    }
+
+    return $classes;
+}
+add_filter('body_class', 'itstudio_intro_body_class');
+
 function itstudio_custom_post_types() {
     register_post_type('announcement', array(
         'labels' => array(
@@ -81,6 +110,57 @@ function itstudio_custom_post_types() {
     ));
 }
 add_action('init', 'itstudio_custom_post_types');
+
+// Fallback: render /about even if the page isn't created in WP admin.
+function itstudio_about_fallback() {
+    if (!is_404()) {
+        return;
+    }
+
+    global $wp;
+    $request = isset($wp->request) ? trim($wp->request, '/') : '';
+    if ($request !== 'about') {
+        return;
+    }
+
+    $template = locate_template('page-about.php');
+    if ($template) {
+        global $wp_query;
+        if ($wp_query) {
+            $wp_query->is_404 = false;
+            $wp_query->is_page = true;
+            $wp_query->is_singular = true;
+            $virtual_post = new WP_Post((object) array(
+                'ID' => 0,
+                'post_type' => 'page',
+                'post_parent' => 0,
+                'post_title' => __('工作室介绍', 'itstudio'),
+                'post_status' => 'publish',
+                'post_name' => 'about',
+                'post_content' => '',
+            ));
+            $wp_query->post = $virtual_post;
+            $wp_query->posts = array($virtual_post);
+            $wp_query->queried_object = $virtual_post;
+            $wp_query->queried_object_id = 0;
+            $wp_query->post_count = 1;
+            $wp_query->found_posts = 1;
+            $wp_query->max_num_pages = 1;
+            global $post;
+            $post = $virtual_post;
+            setup_postdata($post);
+        }
+        add_filter('document_title_parts', function ($parts) {
+            $parts['title'] = __('工作室介绍', 'itstudio');
+            return $parts;
+        });
+        status_header(200);
+        nocache_headers();
+        include $template;
+        exit;
+    }
+}
+add_action('template_redirect', 'itstudio_about_fallback');
 
 /**
  * GitHub 风格评论
