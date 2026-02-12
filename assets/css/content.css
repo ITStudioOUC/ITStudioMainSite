@@ -23,6 +23,10 @@
   width: 100%;
 }
 
+.error404 {
+  overflow-y: scroll;
+}
+
 .error-content {
   max-width: 520px;
 }
