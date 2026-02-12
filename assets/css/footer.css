@@ -5,34 +5,34 @@
 .site-footer {
   background-color: var(--bg-surface);
   border-top: 1px solid var(--border-default);
-  padding: 4rem 0 2rem;
+  padding: 1rem 0 0.75rem;
   margin-top: auto; /* 确保置底 */
   flex-shrink: 0; /* 防止Footer被压缩 */
-  font-size: 16px; /* 增加页脚基础字号 */
+  font-size: 15px; /* 增加页脚基础字号 */
 }
 
 /* --- 页脚内容网格 --- */
 .footer-content {
   display: grid;
   grid-template-columns: repeat(4, 1fr); /* 4列布局 */
-  gap: 2rem;
-  margin-bottom: 3rem;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .footer-section h3 {
-  font-size: 18px; /* 增大标题字号 (原1rem/16px) */
+  font-size: 17px; /* 增大标题字号 (原1rem/16px) */
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 0.6rem;
   color: var(--text-primary);
 }
 
 .footer-links li {
-  margin-bottom: 0.8rem; /* 增加行间距 */
+  margin-bottom: 0.5rem; /* 增加行间距 */
 }
 
 .footer-links a {
   color: var(--text-secondary);
-  font-size: 15px; /* 增大链接字号 (原0.9rem/14.4px) */
+  font-size: 14px; /* 增大链接字号 (原0.9rem/14.4px) */
 }
 
 .footer-links a:hover {
@@ -43,10 +43,10 @@
 /* --- 底部版权区 --- */
 .footer-bottom {
   border-top: 1px solid var(--border-muted);
-  padding-top: 2rem;
+  padding-top: 1rem;
   text-align: center;
   color: var(--text-secondary);
-  font-size: 14px; /* 增大版权信息字号 (原0.85rem/13.6px) */
+  font-size: 13px; /* 增大版权信息字号 (原0.85rem/13.6px) */
 }
 
 /* --- 响应式适配 --- */
@@ -62,6 +62,6 @@
   }
 
   .site-footer {
-    padding: 3rem 0 1.5rem;
+    padding: 1.5rem 0 1rem;
   }
 }
