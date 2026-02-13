@@ -6,6 +6,9 @@
   position: relative;
   overflow: hidden;
   background-color: var(--bg-body);
+  background-image:
+    linear-gradient(160deg, var(--intro-glow-primary), transparent 55%),
+    linear-gradient(330deg, var(--intro-glow-accent), transparent 50%);
   --intro-glow-primary: rgba(9, 105, 218, 0.14);
   --intro-glow-accent: rgba(142, 136, 199, 0.14);
 }
@@ -16,18 +19,7 @@
 }
 
 .intro-page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 18% 8%, var(--intro-glow-primary), transparent 45%),
-    radial-gradient(circle at 85% 0%, var(--intro-glow-accent), transparent 40%),
-    linear-gradient(var(--border-muted) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-muted) 1px, transparent 1px);
-  background-size: auto, auto, 64px 64px, 64px 64px;
-  background-position: center top;
-  opacity: 0.7;
-  pointer-events: none;
+  display: none;
 }
 
 .intro-about .site-header {

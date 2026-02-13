@@ -8,25 +8,12 @@
   background-color: var(--bg-body);
   position: relative;
   overflow: hidden;
-
-  /* 科技网格背景 */
-  background-image:
-    linear-gradient(var(--border-muted) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-muted) 1px, transparent 1px);
-  background-size: 40px 40px;
-  background-position: center top;
+  background-image: none;
 }
 
 /* 底部渐变遮罩 */
 .hero-section::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
-  background: linear-gradient(to bottom, transparent, var(--bg-body));
-  pointer-events: none;
+  display: none;
 }
 
 .hero-content {
