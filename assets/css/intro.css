@@ -292,6 +292,11 @@ html:not([data-theme="dark"]) .intro-about .site-header {
   grid-template-columns: repeat(3, 1fr);
 }
 
+/* Stream text characters */
+.stream-char {
+  transition: opacity 0.4s ease;
+}
+
 /* Animations */
 .intro-animate {
   transition: opacity 0.8s var(--ease-in-out), transform 0.8s var(--ease-in-out);

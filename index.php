@@ -1,13 +1,24 @@
 <?php get_header(); ?>
 
 <main class="site-main">
+    <canvas class="hero-waves" aria-hidden="true"></canvas>
     <section class="hero-section">
         <div class="container">
             <div class="hero-content">
-                <h1 data-cn="爱特工作室" data-en="IT STUDIO"></h1>
-                <p class="hero-description" data-cn="爱特工作室成立于2002年，致力于发现人才、培养人才、输送人才。现已拥有UI设计、Web开发、程序设计、Android开发、游戏设计、iOS开发六大技术方向，是海大网络技术的中坚力量！" data-en="Founded in 2002, IT Studio is dedicated to discovering, cultivating, and delivering talent. With six major technical directions including UI Design, Web Development, Programming, Android Development, Game Design, and iOS Development, we are the backbone of OUC's network technology!"></p>
+                <h1 class="hero-title">
+                    <span class="hero-title-svg" aria-hidden="true"></span>
+                    <span class="hero-title-text" data-cn="爱特工作室" data-en="IT STUDIO"></span>
+                </h1>
             </div>
+        </div>
+        <div class="hero-scroll-indicator" aria-hidden="true">
+            <span class="scroll-arrow"></span>
+            <span class="scroll-text" data-cn="向下滑动开始" data-en="Scroll to begin"></span>
+        </div>
+    </section>
 
+    <section class="services-section">
+        <div class="container">
             <!-- 服务提供模块 -->
             <div class="services-provided">
                 <h2 data-cn="# 服务提供" data-en="# Our Services"></h2>

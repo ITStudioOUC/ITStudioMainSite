@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-  const container = document.querySelector('.hero-description');
+  const container = document.querySelector('.stream-text') || document.querySelector('.hero-description');
   if (!container) return;
 
   const cnText = container.getAttribute('data-cn') || '';

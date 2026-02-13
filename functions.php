@@ -31,17 +31,19 @@ function itstudio_enqueue_scripts() {
     // 仅在首页加载 Hero 样式
     if (is_front_page() || is_home()) {
         wp_enqueue_style('itstudio-front-page', get_template_directory_uri() . '/assets/css/front-page.css', array('itstudio-style'), '2.1.2');
+        wp_enqueue_script('itstudio-hero-waves', get_template_directory_uri() . '/assets/js/hero-waves.js', array(), '1.0.0', true);
+        wp_enqueue_script('itstudio-home-hero', get_template_directory_uri() . '/assets/js/home-hero.js', array(), '1.0.0', true);
     }
 
     // 仅在工作室介绍页加载（包含 /about fallback）
-    $is_about_fallback = false;
-    if (is_404()) {
+    $is_about = is_page('about') || is_page_template('page-about.php');
+    if (!$is_about && is_404()) {
         global $wp;
         $request = isset($wp->request) ? trim($wp->request, '/') : '';
-        $is_about_fallback = ($request === 'about');
+        $is_about = ($request === 'about');
     }
 
-    if (is_page('about') || is_page_template('page-about.php') || $is_about_fallback) {
+    if ($is_about) {
         wp_enqueue_style('itstudio-intro', get_template_directory_uri() . '/assets/css/intro.css', array('itstudio-content'), '2.1.2');
         wp_enqueue_script('itstudio-intro-scroll', get_template_directory_uri() . '/assets/js/intro-scroll.js', array(), '1.0.0', true);
     }
@@ -49,8 +51,8 @@ function itstudio_enqueue_scripts() {
     // Scripts
     wp_enqueue_script('itstudio-theme-toggle', get_template_directory_uri() . '/assets/js/theme-toggle.js', array(), '1.0.0', true);
     wp_enqueue_script('itstudio-lang-toggle', get_template_directory_uri() . '/assets/js/lang-toggle.js', array(), '1.0.0', true);
-    // 注册并加载打字机效果脚本 - 仅在首页
-    if (is_front_page() || is_home()) {
+    // 注册并加载打字机效果脚本 - 仅在工作室介绍页
+    if ($is_about) {
         wp_enqueue_script('itstudio-stream', get_template_directory_uri() . '/assets/js/stream.js', array(), '1.0.0', true);
     }
     wp_enqueue_script('itstudio-main', get_template_directory_uri() . '/assets/js/main.js', array(), '1.0.0', true);

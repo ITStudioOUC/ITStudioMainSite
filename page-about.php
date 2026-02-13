@@ -8,7 +8,7 @@ get_header();
         <div class="container intro-hero-grid">
             <div class="intro-copy">
                 <h1 class="intro-title intro-animate" style="--delay: 0.05s" data-cn="与海同频的技术社团" data-en="A Tech Studio Tuned to the Ocean"></h1>
-                <p class="intro-lead intro-animate" style="--delay: 0.1s" data-cn="中国海洋大学爱特工作室，自 2002 年以来聚焦人才培养与真实项目，连接设计、开发与创新实践。" data-en="Since 2002, IT Studio at OUC connects design, engineering, and real projects to grow talent."></p>
+                <p class="intro-lead intro-animate stream-text" style="--delay: 0.1s" data-cn="中国海洋大学爱特工作室，自 2002 年以来聚焦人才培养与真实项目，连接设计、开发与创新实践。" data-en="Since 2002, IT Studio at OUC connects design, engineering, and real projects to grow talent."></p>
                 <p class="intro-sub intro-animate" style="--delay: 0.15s" data-cn="在海洋与科技之间，探索更有温度的数字创造。" data-en="Where ocean spirit meets modern engineering."></p>
                 <div class="intro-cta-group intro-animate" style="--delay: 0.2s">
                     <a class="intro-btn intro-btn--primary" href="#overview" data-cn="开始探索" data-en="Explore" aria-label="Explore"></a>

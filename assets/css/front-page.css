@@ -3,12 +3,116 @@
    ========================================= */
 
 /* --- Hero 区域 --- */
+.site-main {
+  position: relative;
+}
+
 .hero-section {
-  padding: 120px 0 80px;
+  padding: 40px 0;
   background-color: var(--bg-body);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   background-image: none;
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  align-items: center;
+  isolation: isolate;
+  z-index: 1;
+}
+
+.hero-scroll-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 4;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s var(--ease-in-out), transform 0.45s var(--ease-in-out);
+}
+
+.hero-scroll-indicator .scroll-arrow {
+  width: 18px;
+  height: 18px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  animation: hero-scroll-bounce 1.6s ease-in-out infinite;
+}
+
+.hero-scroll-indicator .scroll-text {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+}
+
+@keyframes hero-scroll-bounce {
+  0%, 100% { transform: translateY(0) rotate(45deg); opacity: 0.5; }
+  50% { transform: translateY(6px) rotate(45deg); opacity: 1; }
+}
+
+@media (min-width: 900px) {
+  .home-hero-initial .site-header {
+    transform: translateY(-100%);
+  }
+
+  .home-hero-initial .site-header,
+  .home-hero-scrolled .site-header {
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  .home-hero-initial .hero-scroll-indicator {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .home-hero-scrolled .hero-scroll-indicator {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+}
+
+.hero-waves {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 140vh;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: screen;
+  filter: saturate(1.08);
+  display: block;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.9) 55%, rgba(0, 0, 0, 0.35) 75%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.9) 55%, rgba(0, 0, 0, 0.35) 75%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+html:not([data-theme="dark"]) .hero-waves {
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+  filter: saturate(1.2);
+}
+
+[data-theme="dark"] .hero-waves {
+  opacity: 0.5;
+  mix-blend-mode: screen;
+  filter: saturate(1.08);
 }
 
 /* 底部渐变遮罩 */
@@ -22,18 +126,82 @@
   text-align: center;
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* 大标题 */
-.hero-content h1 {
-  font-size: 4rem; /* 增大 Hero 标题 (原3.5rem) */
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--color-primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1.2;
+.hero-title {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 1.2rem;
+  overflow: visible;
+  --hero-title-gradient: linear-gradient(135deg, var(--text-primary) 0%, var(--color-primary) 100%);
+  width: 100%;
+}
+
+.hero-title-svg {
+  display: block;
+  width: min(88vw, 900px);
+  margin: 0 auto;
+  aspect-ratio: 3 / 2;
+  background-image: var(--hero-title-gradient);
+  -webkit-mask: url("../../resources/title.svg") center / contain no-repeat;
+  mask: url("../../resources/title.svg") center / contain no-repeat;
+  filter:
+    drop-shadow(0 10px 24px rgba(12, 20, 32, 0.25))
+    drop-shadow(0 0 18px rgba(120, 190, 255, 0.28));
+  position: relative;
+  transform: translateY(-8px) scale(1.06);
+  transform-origin: center;
+}
+
+.hero-title-svg::before {
+  content: "";
+  position: absolute;
+  inset: -6% -4%;
+  background:
+    radial-gradient(circle at 30% 35%, rgba(255, 255, 255, 0.35), transparent 55%),
+    radial-gradient(circle at 70% 45%, rgba(140, 205, 255, 0.28), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
+  -webkit-mask: url("../../resources/title.svg") center / contain no-repeat;
+  mask: url("../../resources/title.svg") center / contain no-repeat;
+  opacity: 0.22;
+  filter: blur(6px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+html:not([data-theme="dark"]) .hero-title-svg::before {
+  opacity: 0;
+}
+
+.hero-title-svg::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 55%;
+  background-image: var(--hero-title-gradient);
+  -webkit-mask: url("../../resources/title.svg") center / contain no-repeat;
+  mask: url("../../resources/title.svg") center / contain no-repeat;
+  transform: scaleY(-1);
+  opacity: 0.18;
+  filter: blur(2px);
+}
+
+.hero-title-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* 描述文本 (代码风格) */
@@ -52,9 +220,16 @@
 
 /* --- 服务展示区 (Services) --- */
 .services-provided {
-  margin-top: 5rem;
+  margin-top: 0;
   position: relative;
   z-index: 2;
+}
+
+.services-section {
+  padding: 80px 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, var(--bg-body) 55%);
+  position: relative;
+  z-index: 3;
 }
 
 /* 标题带有命令提示符风格 */
@@ -85,8 +260,8 @@
 }
 
 .service-item {
-  background: var(--bg-card);
-  border: 1px solid var(--border-default);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-md);
   padding: 32px 24px;
   display: flex;
@@ -99,8 +274,7 @@
 
 .service-item:hover {
   transform: translateY(-4px);
-  border-color: var(--color-primary-light);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .service-icon {
@@ -129,17 +303,66 @@
 }
 
 @media (max-width: 768px) {
-  .hero-content h1 {
-    font-size: 2.25rem;
+  .hero-title {
+    margin-bottom: 1rem;
+  }
+
+  .hero-title-svg {
+    width: min(92vw, 560px);
+    transform: translateY(-6px) scale(1.03);
   }
 
   .hero-description {
     font-size: 1rem;
   }
+
+  .services-section {
+    padding: 28px 0;
+  }
+
+  .hero-section {
+    min-height: auto;
+    padding: 16px 0 16px;
+  }
+
+  .hero-waves {
+    display: none;
+  }
+
+  .hero-scroll-indicator {
+    display: none;
+  }
 }
 
 @media (max-width: 600px) {
   .services-grid-box {
-    grid-template-columns: 1fr; /* 手机端单列 */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .service-item {
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .service-item:hover {
+    transform: none;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .service-icon {
+    margin-bottom: 0.75rem;
+  }
+
+  .service-icon svg {
+    width: 64px;
+    height: 64px;
+  }
+
+  .service-item span {
+    font-size: 1rem;
   }
 }
