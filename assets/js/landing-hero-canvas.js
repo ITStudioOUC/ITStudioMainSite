@@ -653,11 +653,17 @@
   };
 
   const drawCodeEditor = (palette, elapsed, isStatic) => {
-    const gutterWidth = clamp(Math.round(width * 0.08), 56, 92);
-    const fontSize = clamp(Math.round(width / 98), 14, 20);
-    const lineHeight = Math.round(fontSize * 1.72);
-    const topPadding = Math.round(lineHeight * 1.24);
-    const codeStartX = gutterWidth + 18;
+    const compact = width <= 680;
+    const narrow = width <= 420;
+    const gutterWidth = compact
+      ? clamp(Math.round(width * (narrow ? 0.054 : 0.06)), 30, narrow ? 42 : 48)
+      : clamp(Math.round(width * 0.08), 56, 92);
+    const fontSize = compact
+      ? clamp(Math.round(width / (narrow ? 152 : 136)), narrow ? 8 : 9, narrow ? 11 : 12)
+      : clamp(Math.round(width / 98), 14, 20);
+    const lineHeight = Math.round(fontSize * (compact ? (narrow ? 1.34 : 1.42) : 1.72));
+    const topPadding = Math.round(lineHeight * (compact ? (narrow ? 0.58 : 0.7) : 1.24));
+    const codeStartX = gutterWidth + (compact ? (narrow ? 6 : 8) : 18);
     const visibleLines = Math.max(1, Math.ceil((height - topPadding * 2) / lineHeight) + 2);
     const baseLineNo = 1;
     const scrollLeadLines = 2;
@@ -679,7 +685,9 @@
 
     ctx.strokeStyle = palette.guide;
     ctx.lineWidth = 1;
-    for (let x = codeStartX + 110; x < width; x += 120) {
+    const guideOffset = compact ? (narrow ? 54 : 64) : 110;
+    const guideGap = compact ? (narrow ? 68 : 76) : 120;
+    for (let x = codeStartX + guideOffset; x < width; x += guideGap) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, height);
@@ -769,12 +777,24 @@
       if ((lineIndex + 7) % 19 === 0) {
         ctx.beginPath();
         ctx.fillStyle = palette.markerOk;
-        ctx.arc(12, y - lineHeight * 0.38, 3.2, 0, Math.PI * 2);
+        ctx.arc(
+          compact ? (narrow ? 7 : 8) : 12,
+          y - lineHeight * 0.38,
+          compact ? (narrow ? 1.9 : 2.2) : 3.2,
+          0,
+          Math.PI * 2
+        );
         ctx.fill();
       } else if ((lineIndex + 3) % 23 === 0) {
         ctx.beginPath();
         ctx.fillStyle = palette.markerWarn;
-        ctx.arc(12, y - lineHeight * 0.38, 3.2, 0, Math.PI * 2);
+        ctx.arc(
+          compact ? (narrow ? 7 : 8) : 12,
+          y - lineHeight * 0.38,
+          compact ? (narrow ? 1.9 : 2.2) : 3.2,
+          0,
+          Math.PI * 2
+        );
         ctx.fill();
       }
     }

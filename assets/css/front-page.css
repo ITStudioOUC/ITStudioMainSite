@@ -316,16 +316,32 @@
 
 @media (max-width: 680px) {
   .landing-hero {
-    min-height: 370px;
+    min-height: clamp(210px, 36vh, 260px);
+    --hero-overlay-highlight: rgba(255, 255, 255, 0.1);
+    --hero-overlay-top: rgba(248, 251, 255, 0.06);
+    --hero-overlay-bottom: rgba(206, 220, 243, 0.06);
   }
 
   .landing-hero-content {
-    padding: 44px 0;
+    max-width: 95%;
+    padding: 12px 0;
+  }
+
+  .landing-hero-title {
+    margin-bottom: 6px;
+    font-size: clamp(1.55rem, 7.2vw, 2.2rem);
+  }
+
+  .landing-hero-subtitle {
+    font-size: clamp(0.84rem, 3.9vw, 1.06rem);
+    line-height: 1.35;
   }
 
   .landing-hero-btn {
-    min-height: 44px;
-    padding: 0 24px;
+    margin-top: 10px;
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 0.86rem;
   }
 
   .service-item {
@@ -361,5 +377,30 @@
 
   .landing-feed-excerpt {
     -webkit-line-clamp: 2;
+  }
+}
+
+@media (max-width: 420px) {
+  .landing-hero {
+    min-height: clamp(190px, 33vh, 235px);
+  }
+
+  .landing-hero-content {
+    padding: 8px 0;
+  }
+
+  .landing-hero-title {
+    font-size: clamp(1.38rem, 7.5vw, 1.9rem);
+  }
+
+  .landing-hero-subtitle {
+    font-size: clamp(0.78rem, 3.6vw, 0.95rem);
+  }
+
+  .landing-hero-btn {
+    min-height: 32px;
+    margin-top: 8px;
+    padding: 0 12px;
+    font-size: 0.82rem;
   }
 }
