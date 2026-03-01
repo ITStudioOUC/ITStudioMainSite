@@ -74,11 +74,22 @@
                     <span></span>
                     <span></span>
                 </button>
+                <?php
+                $announcement_nav_url = get_post_type_archive_link('announcement');
+                if (!$announcement_nav_url) {
+                    $announcement_nav_url = home_url('/announcements');
+                }
+                $posts_page_id = (int) get_option('page_for_posts');
+                $blog_nav_url = $posts_page_id ? get_permalink($posts_page_id) : '';
+                if (!$blog_nav_url) {
+                    $blog_nav_url = home_url('/blog');
+                }
+                ?>
 
                 <ul class="nav-menu">
                     <li><a href="<?php echo esc_url(home_url('/')); ?>" data-cn="首页" data-en="Home"></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/announcements')); ?>" data-cn="公告通知" data-en="Events"></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/blog')); ?>" data-cn="技术博客" data-en="Blog"></a></li>
+                    <li><a href="<?php echo esc_url($announcement_nav_url); ?>" data-cn="公告通知" data-en="Events"></a></li>
+                    <li><a href="<?php echo esc_url($blog_nav_url); ?>" data-cn="技术博客" data-en="Blog"></a></li>
                     <li><a href="<?php echo esc_url(home_url('/services')); ?>" data-cn="便民服务" data-en="Service"></a></li>
                     <li><a href="<?php echo esc_url(home_url('/about')); ?>" data-cn="工作室介绍" data-en="Introduction"></a></li>
                     <li><a href="<?php echo esc_url(home_url('/join')); ?>" data-cn="加入我们" data-en="Join"></a></li>

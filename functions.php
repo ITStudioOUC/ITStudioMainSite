@@ -28,11 +28,10 @@ function itstudio_enqueue_scripts() {
     wp_enqueue_style('itstudio-footer', get_template_directory_uri() . '/assets/css/footer.css', array('itstudio-style'), '2.1.2');
     wp_enqueue_style('itstudio-content', get_template_directory_uri() . '/assets/css/content.css', array('itstudio-style'), '2.1.2');
 
-    // 仅在首页加载 Hero 样式
+    // 仅在首页加载首页样式
     if (is_front_page() || is_home()) {
         wp_enqueue_style('itstudio-front-page', get_template_directory_uri() . '/assets/css/front-page.css', array('itstudio-style'), '2.1.2');
-        wp_enqueue_script('itstudio-hero-waves', get_template_directory_uri() . '/assets/js/hero-waves.js', array(), '1.0.0', true);
-        wp_enqueue_script('itstudio-home-hero', get_template_directory_uri() . '/assets/js/home-hero.js', array(), '1.0.0', true);
+        wp_enqueue_script('itstudio-landing-hero-canvas', get_template_directory_uri() . '/assets/js/landing-hero-canvas.js', array(), '1.0.0', true);
     }
 
     // 仅在工作室介绍页加载（包含 /about fallback）
@@ -44,17 +43,14 @@ function itstudio_enqueue_scripts() {
     }
 
     if ($is_about) {
-        wp_enqueue_style('itstudio-intro', get_template_directory_uri() . '/assets/css/intro.css', array('itstudio-content'), '2.1.2');
-        wp_enqueue_script('itstudio-intro-scroll', get_template_directory_uri() . '/assets/js/intro-scroll.js', array(), '1.0.0', true);
+        wp_enqueue_style('itstudio-about-hero', get_template_directory_uri() . '/assets/css/about-hero.css', array('itstudio-content'), '2.1.2');
+        wp_enqueue_script('itstudio-about-hero-waves', get_template_directory_uri() . '/assets/js/hero-waves.js', array(), '1.0.0', true);
+        wp_enqueue_script('itstudio-about-hero', get_template_directory_uri() . '/assets/js/home-hero.js', array(), '1.0.0', true);
     }
 
     // Scripts
     wp_enqueue_script('itstudio-theme-toggle', get_template_directory_uri() . '/assets/js/theme-toggle.js', array(), '1.0.0', true);
     wp_enqueue_script('itstudio-lang-toggle', get_template_directory_uri() . '/assets/js/lang-toggle.js', array(), '1.0.0', true);
-    // 注册并加载打字机效果脚本 - 仅在工作室介绍页
-    if ($is_about) {
-        wp_enqueue_script('itstudio-stream', get_template_directory_uri() . '/assets/js/stream.js', array(), '1.0.0', true);
-    }
     wp_enqueue_script('itstudio-main', get_template_directory_uri() . '/assets/js/main.js', array(), '1.0.0', true);
 }
 add_action('wp_enqueue_scripts', 'itstudio_enqueue_scripts');
