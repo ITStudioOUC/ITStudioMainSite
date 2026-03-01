@@ -20,6 +20,35 @@ function itstudio_theme_setup() {
 }
 add_action('after_setup_theme', 'itstudio_theme_setup');
 
+function itstudio_apply_site_identity() {
+    $site_name = base64_decode('54ix54m55bel5L2c5a6k');
+    $site_tagline = base64_decode('54ix54m55bel5L2c5a6k5a6Y5pa5572R56uZ');
+
+    if (get_option('blogname') !== $site_name) {
+        update_option('blogname', $site_name);
+    }
+
+    if (get_option('blogdescription') !== $site_tagline) {
+        update_option('blogdescription', $site_tagline);
+    }
+}
+add_action('init', 'itstudio_apply_site_identity', 20);
+
+function itstudio_output_favicon() {
+    $favicon_url = get_template_directory_uri() . '/resources/it_logo_2024.svg';
+    echo '<link rel="icon" href="' . esc_url($favicon_url) . '" type="image/svg+xml">' . "\n";
+    echo '<link rel="shortcut icon" href="' . esc_url($favicon_url) . '" type="image/svg+xml">' . "\n";
+}
+function itstudio_disable_default_site_icon() {
+    remove_action('wp_head', 'wp_site_icon', 99);
+    remove_action('admin_head', 'wp_site_icon', 99);
+    remove_action('login_head', 'wp_site_icon', 99);
+}
+add_action('init', 'itstudio_disable_default_site_icon');
+add_action('wp_head', 'itstudio_output_favicon', 1);
+add_action('admin_head', 'itstudio_output_favicon', 1);
+add_action('login_head', 'itstudio_output_favicon', 1);
+
 function itstudio_enqueue_scripts() {
     // 基础样式 (Style.css)
     wp_enqueue_style('itstudio-style', get_stylesheet_uri(), array(), '2.1.2');
