@@ -65,3 +65,23 @@
     padding: 1.5rem 0 1rem;
   }
 }
+
+.footer-address-text {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.footer-icp {
+  margin-top: 0.45rem;
+}
+
+.footer-icp a {
+  color: var(--text-secondary);
+}
+
+.footer-icp a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
