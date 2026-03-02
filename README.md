@@ -60,16 +60,36 @@ git clone https://github.com/itstudio-2002/ITStudioMainSite.git
 #### 2. 发布公告
 
 主题内置了"公告通知"自定义文章类型：
-1. 进入 **公告 > 新建公告**
+1. 进入 **Announcement > 新建 Announcement**
 2. 填写标题和内容
 3. 发布即可在首页显示
 
-#### 3. 技术博客
+#### 3. 发布新闻
 
-使用 WordPress 默认的文章功能发布技术博客：
-1. 进入 **文章 > 写文章**
-2. 撰写博客内容
-3. 发布后会在首页博客栏显示
+主题内置了"社团新闻"自定义文章类型：
+1. 进入 **News > 新建 News**
+2. 填写标题和内容
+3. 发布即可在首页显示
+
+#### 4. 新闻公告页权重字段（ACF）
+
+新闻公告页右侧“高权重文章”读取 ACF 数值字段 `itstudio_weight`（数值越大，排序越靠前）。
+
+适用范围：
+- 默认文章（`post`）
+- 公告（`announcement`）
+- 新闻（`news`）
+
+设置步骤：
+1. 安装并启用插件 **Advanced Custom Fields (ACF)**。
+2. 主题会自动注册字段组“内容权重”，字段名为 `itstudio_weight`（显示名“权重”）。
+3. 编辑文章时在右侧填写“权重”数值（例如 `10`、`50`、`100`）。
+4. 更新或发布文章。
+
+说明：
+- 当前仅读取 ACF 字段值，不再使用 Gutenberg 的“自定义字段”面板作为权重来源。
+- 未设置 `itstudio_weight` 的文章按 `0` 处理。
+- 当高权重文章不足 4 篇时，页面会自动用最新文章补足。
 
 ## 🎨 设计规范
 
@@ -144,7 +164,7 @@ MIT License - 详见 LICENSE 文件
 🎯 **使命**: 发现人才，培养人才，输送人才
 
 🔗 **链接**:
-- GitHub: [github.com/itstudio-2002](https://github.com/itstudio-2002)
+- GitHub: [https://github.com/ITStudioOUC](https://github.com/ITStudioOUC)
 - Email: contact@itstudio.club
 
 ## 🤝 贡献

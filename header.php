@@ -60,7 +60,7 @@
                             <path id="cls-3" data-name="cls-3" class="cls-3" d="M18,28L46,12V49L18,66V28Z"/>
                         </g>
                         <g class="text-group" transform="translate(165, 0)">
-                            <text y="38" class="text-cn" fill="currentColor">爱特工作室</text>
+                            <text y="38" class="text-cn" fill="currentColor">&#29233;&#29305;&#24037;&#20316;&#23460;</text>
                             <text y="56" class="text-en">IT Studio</text>
                         </g>
                     </svg>
@@ -79,20 +79,26 @@
                 if (!$announcement_nav_url) {
                     $announcement_nav_url = home_url('/announcements');
                 }
+                $news_nav_url = get_post_type_archive_link('news');
+                if (!$news_nav_url) {
+                    $news_nav_url = home_url('/news');
+                }
                 $posts_page_id = (int) get_option('page_for_posts');
                 $blog_nav_url = $posts_page_id ? get_permalink($posts_page_id) : '';
                 if (!$blog_nav_url) {
                     $blog_nav_url = home_url('/blog');
                 }
+                $blog_nav_url = 'https://blog.itstudio.club';
                 ?>
 
                 <ul class="nav-menu">
-                    <li><a href="<?php echo esc_url(home_url('/')); ?>" data-cn="首页" data-en="Home"></a></li>
-                    <li><a href="<?php echo esc_url($announcement_nav_url); ?>" data-cn="公告通知" data-en="Events"></a></li>
-                    <li><a href="<?php echo esc_url($blog_nav_url); ?>" data-cn="技术博客" data-en="Blog"></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/services')); ?>" data-cn="便民服务" data-en="Service"></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/about')); ?>" data-cn="工作室介绍" data-en="Introduction"></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/join')); ?>" data-cn="加入我们" data-en="Join"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/')); ?>" data-cn="&#39318;&#39029;" data-en="Home"></a></li>
+                    <li><a href="<?php echo esc_url($announcement_nav_url); ?>" data-cn="&#20844;&#21578;&#36890;&#30693;" data-en="Announcements"></a></li>
+                    <li><a href="<?php echo esc_url($news_nav_url); ?>" data-cn="&#31038;&#22242;&#26032;&#38395;" data-en="News"></a></li>
+                    <li><a href="<?php echo esc_url($blog_nav_url); ?>" target="_blank" rel="noopener noreferrer" data-cn="&#25216;&#26415;&#21338;&#23458;" data-en="Blog"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/services')); ?>" data-cn="&#20415;&#27665;&#26381;&#21153;" data-en="Service"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/about')); ?>" data-cn="&#24037;&#20316;&#23460;&#20171;&#32461;" data-en="Introduction"></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/join')); ?>" data-cn="&#21152;&#20837;&#25105;&#20204;" data-en="Join"></a></li>
                 </ul>
 
                 <div class="social-links">

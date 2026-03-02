@@ -6,10 +6,9 @@
     if (!$announcement_archive_url) {
         $announcement_archive_url = home_url('/announcements');
     }
-    $posts_page_id = (int) get_option('page_for_posts');
-    $blog_archive_url = $posts_page_id ? get_permalink($posts_page_id) : '';
-    if (!$blog_archive_url) {
-        $blog_archive_url = home_url('/blog');
+    $club_news_url = get_post_type_archive_link('news');
+    if (!$club_news_url) {
+        $club_news_url = home_url('/news');
     }
     ?>
 
@@ -17,9 +16,9 @@
         <canvas class="landing-hero-canvas" aria-hidden="true"></canvas>
         <div class="container">
             <div class="landing-hero-content">
-                <h1 class="landing-hero-title" data-cn="爱特工作室" data-en="IT STUDIO"></h1>
-                <p class="landing-hero-subtitle" data-cn="中国海洋大学信息技术与工程实践团队" data-en="Technology and Engineering Practice Team at OUC"></p>
-                <a class="landing-hero-btn" href="<?php echo esc_url(home_url('/about')); ?>" data-cn="了解更多" data-en="Learn More"></a>
+                <h1 class="landing-hero-title" data-cn="&#29233;&#29305;&#24037;&#20316;&#23460;" data-en="IT STUDIO"></h1>
+                <p class="landing-hero-subtitle" data-cn="&#20013;&#22269;&#28023;&#27915;&#22823;&#23398;&#20449;&#24687;&#25216;&#26415;&#19982;&#24037;&#31243;&#23454;&#36341;&#22242;&#38431;" data-en="Technology and Engineering Practice Team at OUC"></p>
+                <a class="landing-hero-btn" href="<?php echo esc_url(home_url('/about')); ?>" data-cn="&#20102;&#35299;&#26356;&#22810;" data-en="Learn More"></a>
             </div>
         </div>
     </section>
@@ -27,7 +26,7 @@
     <section class="services-section">
         <div class="container">
             <div class="services-provided">
-                <h2 data-cn="@ 服务提供" data-en="@ Services"></h2>
+                <h2 data-cn="@ &#26381;&#21153;&#25552;&#20379;" data-en="@ Services"></h2>
                 <div class="services-grid-box">
                     <div class="service-item service-resources">
                         <div class="service-icon">
@@ -39,7 +38,7 @@
     <path class="svc-muted" d="M51 35v13M51 48l3-3M51 48l-3-3" />
 </svg>
                         </div>
-                        <span data-cn="资源站" data-en="Resources"></span>
+                        <span data-cn="&#36164;&#28304;&#31449;" data-en="Resources"></span>
                     </div>
                     <div class="service-item service-mirror">
                         <div class="service-icon">
@@ -53,7 +52,7 @@
     <path class="svc-accent" d="M15 36h12" />
 </svg>
                         </div>
-                        <span data-cn="校内镜像站" data-en="Mirror Site"></span>
+                        <span data-cn="&#26657;&#20869;&#38236;&#20687;&#31449;" data-en="Mirror Site"></span>
                     </div>
                     <div class="service-item service-git">
                         <div class="service-icon">
@@ -69,7 +68,7 @@
     <path class="svc-accent" d="M49 37c4 0 7 3 7 7" />
 </svg>
                         </div>
-                        <span data-cn="代码托管" data-en="Git Hosting"></span>
+                        <span data-cn="&#20195;&#30721;&#25176;&#31649;" data-en="Git Hosting"></span>
                     </div>
                     <div class="service-item service-minecraft">
                         <div class="service-icon">
@@ -83,7 +82,7 @@
     <rect class="svc-dot" x="43" y="39" width="6" height="6" rx="1.2" />
 </svg>
                         </div>
-                        <span data-cn="Minecraft服务器" data-en="Minecraft Server"></span>
+                        <span data-cn="Minecraft&#26381;&#21153;&#22120;" data-en="Minecraft Server"></span>
                     </div>
                     <div class="service-item service-forum">
                         <div class="service-icon">
@@ -97,7 +96,7 @@
     <circle class="svc-dot" cx="52" cy="24" r="1.7" />
 </svg>
                         </div>
-                        <span data-cn="OUC论坛" data-en="OUC Forum"></span>
+                        <span data-cn="OUC&#35770;&#22363;" data-en="OUC Forum"></span>
                     </div>
                     <div class="service-item service-repair">
                         <div class="service-icon">
@@ -110,7 +109,7 @@
     <circle class="svc-dot" cx="55" cy="24" r="2" />
 </svg>
                         </div>
-                        <span data-cn="电脑维修" data-en="PC Repair"></span>
+                        <span data-cn="&#30005;&#33041;&#32500;&#20462;" data-en="PC Repair"></span>
                     </div>
                     <div class="service-item service-workshop">
                         <div class="service-icon">
@@ -124,7 +123,7 @@
     <circle class="svc-dot" cx="30" cy="24" r="1.8" />
 </svg>
                         </div>
-                        <span data-cn="五八工坊预约" data-en="Workshop Booking"></span>
+                        <span data-cn="&#20116;&#20843;&#24037;&#22346;&#39044;&#32422;" data-en="Workshop Booking"></span>
                     </div>
                     <div class="service-item service-campus">
                         <div class="service-icon">
@@ -137,7 +136,7 @@
     <path class="svc-accent" d="M49.5 22H54.5M52 19.5v5" />
 </svg>
                         </div>
-                        <span data-cn="OUC便民服务" data-en="OUC Services"></span>
+                        <span data-cn="OUC&#20415;&#27665;&#26381;&#21153;" data-en="OUC Services"></span>
                     </div>
                 </div>
             </div>
@@ -149,8 +148,8 @@
             <div class="landing-updates-grid">
                 <article class="landing-feed-box">
                     <header class="landing-feed-head">
-                        <h2 data-cn="@ 公告通知" data-en="@ Announcements"></h2>
-                        <a href="<?php echo esc_url($announcement_archive_url); ?>" data-cn="更多" data-en="More"></a>
+                        <h2 data-cn="@ &#20844;&#21578;&#36890;&#30693;" data-en="@ Announcements"></h2>
+                        <a href="<?php echo esc_url($announcement_archive_url); ?>" data-cn="&#26356;&#22810;" data-en="More"></a>
                     </header>
                     <ul class="landing-feed">
                         <?php
@@ -185,20 +184,20 @@
                             wp_reset_postdata();
                         else :
                         ?>
-                            <li class="landing-feed-empty" data-cn="暂无公告" data-en="No announcements found."></li>
+                            <li class="landing-feed-empty" data-cn="&#26242;&#26080;&#20844;&#21578;" data-en="No announcements found."></li>
                         <?php endif; ?>
                     </ul>
                 </article>
 
                 <article class="landing-feed-box">
                     <header class="landing-feed-head">
-                        <h2 data-cn="@ 技术博客" data-en="@ Blog"></h2>
-                        <a href="<?php echo esc_url($blog_archive_url); ?>" data-cn="更多" data-en="More"></a>
+                        <h2 data-cn="@ &#31038;&#22242;&#26032;&#38395;" data-en="@ Club News"></h2>
+                        <a href="<?php echo esc_url($club_news_url); ?>" data-cn="&#26356;&#22810;" data-en="More"></a>
                     </header>
                     <ul class="landing-feed">
                         <?php
                         $blogs = new WP_Query(array(
-                            'post_type' => 'post',
+                            'post_type' => 'news',
                             'post_status' => 'publish',
                             'posts_per_page' => 5,
                             'orderby' => 'date',
@@ -228,7 +227,7 @@
                             wp_reset_postdata();
                         else :
                         ?>
-                            <li class="landing-feed-empty" data-cn="暂无博客文章" data-en="No blog posts found."></li>
+                            <li class="landing-feed-empty" data-cn="&#26242;&#26080;&#31038;&#22242;&#26032;&#38395;" data-en="No club news found."></li>
                         <?php endif; ?>
                     </ul>
                 </article>

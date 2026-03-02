@@ -113,19 +113,15 @@
 .services-provided h2,
 .landing-feed-head h2 {
   margin: 0 0 12px;
-  font-size: 1.15rem;
-  color: var(--text-primary);
+  font-size: clamp(1.35rem, 0.5vw + 1.2rem, 1.75rem);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
 }
 
 .services-provided h2::before,
 .landing-feed-head h2::before {
-  content: "#";
-  margin-right: 8px;
-  color: var(--color-primary);
-  font-family: var(--font-mono);
-  font-weight: 700;
+  content: none;
 }
 
 .services-grid-box {

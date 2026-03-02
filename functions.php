@@ -131,12 +131,96 @@ function itstudio_custom_post_types() {
         ),
         'public' => true,
         'has_archive' => true,
-        'supports' => array('title', 'editor', 'thumbnail', 'excerpt'),
+        'supports' => array('title', 'editor', 'thumbnail', 'excerpt', 'custom-fields'),
+        'taxonomies' => array('post_tag'),
         'menu_icon' => 'dashicons-megaphone',
         'show_in_rest' => true,
     ));
+
+    register_post_type('news', array(
+        'labels' => array(
+            'name' => __('News', 'itstudio'),
+            'singular_name' => __('News', 'itstudio'),
+        ),
+        'public' => true,
+        'has_archive' => 'news',
+        'rewrite' => array(
+            'slug' => 'news',
+            'with_front' => false,
+        ),
+        'supports' => array('title', 'editor', 'thumbnail', 'excerpt', 'custom-fields'),
+        'taxonomies' => array('post_tag'),
+        'menu_icon' => 'dashicons-media-document',
+        'show_in_rest' => true,
+    ));
+
+    register_taxonomy_for_object_type('post_tag', 'announcement');
+    register_taxonomy_for_object_type('post_tag', 'news');
 }
 add_action('init', 'itstudio_custom_post_types');
+
+function itstudio_register_acf_fields() {
+    if (!function_exists('acf_add_local_field_group')) {
+        return;
+    }
+
+    acf_add_local_field_group(array(
+        'key' => 'group_itstudio_content_priority',
+        'title' => '内容权重',
+        'fields' => array(
+            array(
+                'key' => 'field_itstudio_weight',
+                'label' => '权重',
+                'name' => 'itstudio_weight',
+                'type' => 'number',
+                'instructions' => '数值越大，文章在侧栏排序越靠前。',
+                'required' => 0,
+                'default_value' => 0,
+                'min' => 0,
+                'step' => 1,
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'post',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'announcement',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'news',
+                ),
+            ),
+        ),
+        'position' => 'side',
+        'style' => 'default',
+        'active' => true,
+        'show_in_rest' => 1,
+    ));
+}
+add_action('acf/init', 'itstudio_register_acf_fields');
+
+function itstudio_archive_document_title($parts) {
+    if (is_post_type_archive('announcement')) {
+        $parts['title'] = html_entity_decode('&#20844;&#21578;&#36890;&#30693;', ENT_QUOTES, 'UTF-8');
+    } elseif (is_post_type_archive('news')) {
+        $parts['title'] = html_entity_decode('&#31038;&#22242;&#26032;&#38395;', ENT_QUOTES, 'UTF-8');
+    }
+
+    return $parts;
+}
+add_filter('document_title_parts', 'itstudio_archive_document_title', 20);
 
 // Fallback: render /about even if the page isn't created in WP admin.
 function itstudio_about_fallback() {
@@ -188,6 +272,59 @@ function itstudio_about_fallback() {
     }
 }
 add_action('template_redirect', 'itstudio_about_fallback');
+
+// Fallback: render /news via archive.php even if the page isn't created in WP admin.
+function itstudio_news_fallback() {
+    if (!is_404()) {
+        return;
+    }
+
+    global $wp;
+    $request = isset($wp->request) ? trim($wp->request, '/') : '';
+    if ($request !== 'news') {
+        return;
+    }
+
+    $template = locate_template('archive.php');
+    if ($template) {
+        global $wp_query;
+        if ($wp_query) {
+            $wp_query->is_404 = false;
+            $wp_query->is_page = true;
+            $wp_query->is_singular = true;
+            $virtual_post = new WP_Post((object) array(
+                'ID' => 0,
+                'post_type' => 'page',
+                'post_parent' => 0,
+                'post_title' => __('社团新闻', 'itstudio'),
+                'post_status' => 'publish',
+                'post_name' => 'news',
+                'post_content' => '',
+            ));
+            $wp_query->post = $virtual_post;
+            $wp_query->posts = array($virtual_post);
+            $wp_query->queried_object = $virtual_post;
+            $wp_query->queried_object_id = 0;
+            $wp_query->post_count = 1;
+            $wp_query->found_posts = 1;
+            $wp_query->max_num_pages = 1;
+            global $post;
+            $post = $virtual_post;
+            setup_postdata($post);
+        }
+        add_filter('document_title_parts', function ($parts) {
+            $parts['title'] = __('社团新闻', 'itstudio');
+            return $parts;
+        });
+        $GLOBALS['itstudio_archive_mode'] = 'news';
+        status_header(200);
+        nocache_headers();
+        include $template;
+        unset($GLOBALS['itstudio_archive_mode']);
+        exit;
+    }
+}
+add_action('template_redirect', 'itstudio_news_fallback');
 
 /**
  * GitHub 风格评论
@@ -263,3 +400,110 @@ function itstudio_comment_callback($comment, $args, $depth) {
     </li>
     <?php
 }
+
+function itstudio_get_post_views($post_id) {
+    $post_id = (int) $post_id;
+    if ($post_id <= 0) {
+        return 0;
+    }
+
+    $meta_keys = array(
+        'post_views_count',
+        'itstudio_views',
+        'views',
+        'post_views',
+        'view_count',
+        'views_count',
+    );
+
+    $max_views = 0;
+    foreach ($meta_keys as $meta_key) {
+        $raw = get_post_meta($post_id, $meta_key, true);
+        if ($raw !== '' && is_numeric($raw)) {
+            $max_views = max($max_views, (int) $raw);
+        }
+    }
+
+    return max(0, $max_views);
+}
+
+function itstudio_get_post_weight($post_id, $field_name = 'itstudio_weight') {
+    $post_id = (int) $post_id;
+    if ($post_id <= 0) {
+        return 0;
+    }
+
+    if (!function_exists('get_field')) {
+        return 0;
+    }
+
+    $raw = get_field($field_name, $post_id, false);
+    if ($raw === '' || $raw === null || !is_numeric($raw)) {
+        return 0;
+    }
+
+    return (int) $raw;
+}
+
+function itstudio_get_post_char_count($post_id) {
+    $post_id = (int) $post_id;
+    if ($post_id <= 0) {
+        return 0;
+    }
+
+    $content = (string) get_post_field('post_content', $post_id);
+    $plain_text = trim(wp_strip_all_tags($content));
+    if ($plain_text === '') {
+        return 0;
+    }
+
+    if (function_exists('mb_strlen')) {
+        return (int) mb_strlen($plain_text, 'UTF-8');
+    }
+
+    return (int) strlen($plain_text);
+}
+
+function itstudio_get_post_excerpt_chars($post_id, $limit = 200) {
+    $post_id = (int) $post_id;
+    $limit = max(1, (int) $limit);
+    if ($post_id <= 0) {
+        return '';
+    }
+
+    $excerpt = (string) get_post_field('post_excerpt', $post_id);
+    if (trim($excerpt) === '') {
+        $excerpt = (string) get_post_field('post_content', $post_id);
+    }
+
+    $excerpt = trim(wp_strip_all_tags($excerpt));
+    if ($excerpt === '') {
+        return '';
+    }
+
+    return wp_html_excerpt($excerpt, $limit, '...');
+}
+
+function itstudio_track_post_views() {
+    if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
+        return;
+    }
+
+    if (!is_singular(array('post', 'announcement', 'news')) || is_preview() || is_feed() || is_trackback() || is_embed()) {
+        return;
+    }
+
+    if (!isset($_SERVER['REQUEST_METHOD']) || strtoupper((string) $_SERVER['REQUEST_METHOD']) !== 'GET') {
+        return;
+    }
+
+    $post_id = (int) get_queried_object_id();
+    if ($post_id <= 0) {
+        return;
+    }
+
+    $views = itstudio_get_post_views($post_id) + 1;
+    update_post_meta($post_id, 'post_views_count', $views);
+    update_post_meta($post_id, 'itstudio_views', $views);
+}
+add_action('template_redirect', 'itstudio_track_post_views', 20);
