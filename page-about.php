@@ -25,110 +25,120 @@ get_header();
             <div class="services-provided">
                 <h2 data-cn="# 服务提供" data-en="# Our Services"></h2>
                 <div class="services-grid-box">
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-resources">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M10 14L24 14L28 20H54C56.2091 20 58 21.7909 58 24V50C58 52.2091 56.2091 54 54 54H10C7.79086 54 6 52.2091 6 50V18C6 15.7909 7.79086 14 10 14Z" stroke="#ccd6f6"/>
-                                <path d="M22 34H42" stroke="#64ffda"/>
-                                <path d="M22 42H34" stroke="#64ffda"/>
-                                <circle cx="48" cy="42" r="2" fill="#64ffda" stroke="none"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <path class="svc-stroke" d="M17 24h14l4 5h20a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H17a4 4 0 0 1-4-4V28a4 4 0 0 1 4-4z" />
+    <rect class="svc-soft-strong" x="23" y="33" width="26" height="17" rx="2.6" />
+    <path class="svc-accent" d="M28 38h16M28 43h12M28 48h9" />
+    <path class="svc-muted" d="M51 35v13M51 48l3-3M51 48l-3-3" />
+</svg>
                         </div>
                         <span data-cn="资源站" data-en="Resources"></span>
                     </a>
 
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-mirror">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="32" cy="32" r="24" stroke="#ccd6f6"/>
-                                <circle cx="32" cy="32" r="8" stroke="#ccd6f6"/>
-                                <path d="M32 24V8" stroke="#64ffda"/>
-                                <path d="M32 40V56" stroke="#233554"/>
-                                <path d="M49 32H56" stroke="#64ffda"/>
-                                <path d="M8 32H15" stroke="#233554"/>
-                                <path d="M44 14C48 18 50 24 50 32" stroke="#64ffda" stroke-dasharray="4 4"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <circle class="svc-stroke" cx="36" cy="36" r="17" />
+    <path class="svc-muted" d="M19 36h34M36 19c5 4.7 7.8 10.5 7.8 17S41 48.3 36 53M36 19c-5 4.7-7.8 10.5-7.8 17S31 48.3 36 53" />
+    <path class="svc-accent" d="M50 29l7 7-7 7" />
+    <path class="svc-accent" d="M57 36H45" />
+    <path class="svc-accent" d="M22 43l-7-7 7-7" />
+    <path class="svc-accent" d="M15 36h12" />
+</svg>
                         </div>
                         <span data-cn="校内镜像站" data-en="Mirror Site"></span>
                     </a>
 
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-git">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="16" y1="12" x2="16" y2="52" stroke="#ccd6f6"/>
-                                <circle cx="16" cy="12" r="4" stroke="#ccd6f6"/>
-                                <circle cx="16" cy="32" r="4" stroke="#ccd6f6"/>
-                                <circle cx="16" cy="52" r="4" stroke="#ccd6f6"/>
-                                <path d="M16 32C26 32 36 36 36 44V48" stroke="#64ffda"/>
-                                <circle cx="36" cy="48" r="4" stroke="#64ffda"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <rect class="svc-stroke" x="12" y="19" width="30" height="30" rx="4" />
+    <path class="svc-muted" d="M17 27h20M17 33h14" />
+    <circle class="svc-dot" cx="49" cy="24" r="3" />
+    <circle class="svc-dot" cx="49" cy="37" r="3" />
+    <circle class="svc-dot" cx="56" cy="47" r="3" />
+    <path class="svc-accent" d="M41 24h8" />
+    <path class="svc-accent" d="M49 24v13" />
+    <path class="svc-accent" d="M49 37c4 0 7 3 7 7" />
+</svg>
                         </div>
                         <span data-cn="代码托管" data-en="Git Hosting"></span>
                     </a>
 
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-minecraft">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M32 8L54 20V44L32 56L10 44V20L32 8Z" stroke="#ccd6f6"/>
-                                <path d="M10 20L32 32L54 20" stroke="#ccd6f6"/>
-                                <path d="M32 56V32" stroke="#ccd6f6"/>
-                                <path d="M26 16L32 20L38 16" stroke="#64ffda"/>
-                                <path d="M46 29L46 38" stroke="#64ffda"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <path class="svc-stroke" d="M36 15l20 11v23L36 60 16 49V26l20-11z" />
+    <path class="svc-muted" d="M16 26l20 11 20-11M36 60V37" />
+    <path class="svc-accent" d="M20 23h32" />
+    <rect class="svc-soft-strong" x="24" y="40" width="6" height="6" rx="1.2" />
+    <rect class="svc-soft-strong" x="34" y="43" width="5" height="5" rx="1.1" />
+    <rect class="svc-dot" x="43" y="39" width="6" height="6" rx="1.2" />
+</svg>
                         </div>
                         <span data-cn="Minecraft服务器" data-en="Minecraft Server"></span>
                     </a>
 
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-forum">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 16H42V40H20L12 48V16Z" stroke="#ccd6f6"/>
-                                <path d="M26 10H56V34H44L38 40V34H26V10Z" stroke="#64ffda"/>
-                                <line x1="32" y1="20" x2="50" y2="20" stroke="#64ffda"/>
-                                <line x1="32" y1="26" x2="44" y2="26" stroke="#64ffda"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <path class="svc-stroke" d="M11 28a6 6 0 0 1 6-6h22a6 6 0 0 1 6 6v13a6 6 0 0 1-6 6H28l-8 7v-7h-3a6 6 0 0 1-6-6V28z" />
+    <path class="svc-accent" d="M36 19a6 6 0 0 1 6-6h13a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6h-5l-4 4v-4h-4a6 6 0 0 1-6-6v-9z" />
+    <circle class="svc-dot" cx="24" cy="35" r="1.8" />
+    <circle class="svc-dot" cx="31" cy="35" r="1.8" />
+    <circle class="svc-dot" cx="46" cy="24" r="1.7" />
+    <circle class="svc-dot" cx="52" cy="24" r="1.7" />
+</svg>
                         </div>
                         <span data-cn="OUC论坛" data-en="OUC Forum"></span>
                     </a>
 
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-repair">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M46 14L50 18L26 42L22 38L46 14Z" stroke="#ccd6f6"/>
-                                <path d="M22 38L14 46L18 50L26 42" stroke="#ccd6f6"/>
-                                <path d="M14 46L10 54" stroke="#ccd6f6"/>
-                                <path d="M45 28L36 19" stroke="#64ffda"/>
-                                <path d="M20 44L14 50" stroke="#233554"/>
-                                <path d="M50 15C53 12 58 12 60 14C62 16 62 21 59 24L34 49C32 51 29 51 27 49L25 47C23 45 23 42 25 40L50 15Z" stroke="#64ffda"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <rect class="svc-stroke" x="11" y="18" width="37" height="25" rx="4" />
+    <path class="svc-muted" d="M29.5 43v6M22 49h15" />
+    <path class="svc-accent" d="M38 24.5a4.7 4.7 0 0 0-6.5 6.6l-7.2 7.2 3.4 3.4 7.2-7.2a4.7 4.7 0 0 0 6.6-6.5l-3 3-2.6-2.6 2.1-3z" />
+    <path class="svc-accent" d="M50 19l10 10" />
+    <circle class="svc-dot" cx="55" cy="24" r="2" />
+</svg>
                         </div>
                         <span data-cn="电脑维修" data-en="PC Repair"></span>
                     </a>
 
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-workshop">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="10" y="12" width="44" height="40" rx="4" stroke="#ccd6f6"/>
-                                <path d="M10 24H54" stroke="#ccd6f6"/>
-                                <path d="M20 6V16" stroke="#ccd6f6"/>
-                                <path d="M44 6V16" stroke="#ccd6f6"/>
-                                <circle cx="32" cy="38" r="6" stroke="#64ffda"/>
-                                <path d="M32 38L36 34" stroke="#64ffda"/>
-                                <circle cx="32" cy="38" r="2" fill="#64ffda" stroke="none"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <rect class="svc-stroke" x="12" y="17" width="48" height="36" rx="5" />
+    <path class="svc-muted" d="M12 30h48M24 12v10M48 12v10" />
+    <rect class="svc-soft-strong" x="24" y="36" width="24" height="13" rx="3" />
+    <path class="svc-accent" d="M29 42l4 4 9-9" />
+    <circle class="svc-dot" cx="22" cy="24" r="1.8" />
+    <circle class="svc-dot" cx="30" cy="24" r="1.8" />
+</svg>
                         </div>
                         <span data-cn="五八工坊预约" data-en="Workshop Booking"></span>
                     </a>
 
-                    <a href="#" class="service-item">
+                    <a href="#" class="service-item service-campus">
                         <div class="service-icon">
-                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M32 56C32 56 56 44 56 26C56 16 46 10 38 16C35 18 32 22 32 22C32 22 29 18 26 16C18 10 8 16 8 26C8 44 32 56 32 56Z" stroke="#ccd6f6"/>
-                                <path d="M32 22V36" stroke="#64ffda"/>
-                                <circle cx="32" cy="40" r="3" stroke="#64ffda"/>
-                                <path d="M18 28H24L26 32" stroke="#233554"/>
-                                <path d="M46 28H40L38 32" stroke="#64ffda"/>
-                            </svg>
+                            <svg class="service-symbol" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+    <circle class="svc-soft" cx="36" cy="36" r="24" />
+    <path class="svc-stroke" d="M36 14l18 8v14c0 12-7 20-18 25-11-5-18-13-18-25V22l18-8z" />
+    <path class="svc-muted" d="M36 24c-4.5 0-8 3.5-8 8 0 5.5 8 13 8 13s8-7.5 8-13c0-4.5-3.5-8-8-8z" />
+    <circle class="svc-soft-strong" cx="36" cy="32" r="3.2" />
+    <circle class="svc-soft-strong" cx="52" cy="22" r="5.2" />
+    <path class="svc-accent" d="M49.5 22H54.5M52 19.5v5" />
+</svg>
                         </div>
                         <span data-cn="OUC便民服务" data-en="OUC Services"></span>
                     </a>

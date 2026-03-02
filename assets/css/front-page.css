@@ -151,13 +151,160 @@
 
 .service-icon {
   margin-bottom: 14px;
-  color: var(--color-primary);
+  --svc-stroke: #2f3d4f;
+  --svc-muted: #5f7288;
+  --svc-accent: var(--color-primary);
+  --svc-soft: rgba(9, 105, 218, 0.12);
+  --svc-soft-strong: rgba(9, 105, 218, 0.2);
+  color: var(--svc-stroke);
 }
 
-.service-icon svg {
+[data-theme="dark"] .service-icon {
+  --svc-stroke: #c4d1de;
+  --svc-muted: #93a4b7;
+  --svc-soft: rgba(88, 166, 255, 0.16);
+  --svc-soft-strong: rgba(88, 166, 255, 0.26);
+}
+
+.service-item.service-resources .service-icon {
+  --svc-accent: #2f7de1;
+  --svc-soft: rgba(47, 125, 225, 0.14);
+  --svc-soft-strong: rgba(47, 125, 225, 0.24);
+}
+
+.service-item.service-mirror .service-icon {
+  --svc-accent: #1f9d8d;
+  --svc-soft: rgba(31, 157, 141, 0.14);
+  --svc-soft-strong: rgba(31, 157, 141, 0.24);
+}
+
+.service-item.service-git .service-icon {
+  --svc-accent: #8b5cf6;
+  --svc-soft: rgba(139, 92, 246, 0.14);
+  --svc-soft-strong: rgba(139, 92, 246, 0.24);
+}
+
+.service-item.service-minecraft .service-icon {
+  --svc-accent: #2e9b45;
+  --svc-soft: rgba(46, 155, 69, 0.14);
+  --svc-soft-strong: rgba(46, 155, 69, 0.24);
+}
+
+.service-item.service-forum .service-icon {
+  --svc-accent: #d97706;
+  --svc-soft: rgba(217, 119, 6, 0.14);
+  --svc-soft-strong: rgba(217, 119, 6, 0.24);
+}
+
+.service-item.service-repair .service-icon {
+  --svc-accent: #d94f45;
+  --svc-soft: rgba(217, 79, 69, 0.14);
+  --svc-soft-strong: rgba(217, 79, 69, 0.24);
+}
+
+.service-item.service-workshop .service-icon {
+  --svc-accent: #c58a00;
+  --svc-soft: rgba(197, 138, 0, 0.14);
+  --svc-soft-strong: rgba(197, 138, 0, 0.24);
+}
+
+.service-item.service-campus .service-icon {
+  --svc-accent: #0f8fb8;
+  --svc-soft: rgba(15, 143, 184, 0.14);
+  --svc-soft-strong: rgba(15, 143, 184, 0.24);
+}
+
+[data-theme="dark"] .service-item.service-resources .service-icon {
+  --svc-accent: #7db5ff;
+  --svc-soft: rgba(125, 181, 255, 0.18);
+  --svc-soft-strong: rgba(125, 181, 255, 0.28);
+}
+
+[data-theme="dark"] .service-item.service-mirror .service-icon {
+  --svc-accent: #5edac7;
+  --svc-soft: rgba(94, 218, 199, 0.18);
+  --svc-soft-strong: rgba(94, 218, 199, 0.28);
+}
+
+[data-theme="dark"] .service-item.service-git .service-icon {
+  --svc-accent: #b9a0ff;
+  --svc-soft: rgba(185, 160, 255, 0.18);
+  --svc-soft-strong: rgba(185, 160, 255, 0.28);
+}
+
+[data-theme="dark"] .service-item.service-minecraft .service-icon {
+  --svc-accent: #6fda83;
+  --svc-soft: rgba(111, 218, 131, 0.18);
+  --svc-soft-strong: rgba(111, 218, 131, 0.28);
+}
+
+[data-theme="dark"] .service-item.service-forum .service-icon {
+  --svc-accent: #f5b04d;
+  --svc-soft: rgba(245, 176, 77, 0.18);
+  --svc-soft-strong: rgba(245, 176, 77, 0.28);
+}
+
+[data-theme="dark"] .service-item.service-repair .service-icon {
+  --svc-accent: #ff8a80;
+  --svc-soft: rgba(255, 138, 128, 0.18);
+  --svc-soft-strong: rgba(255, 138, 128, 0.28);
+}
+
+[data-theme="dark"] .service-item.service-workshop .service-icon {
+  --svc-accent: #ffd166;
+  --svc-soft: rgba(255, 209, 102, 0.18);
+  --svc-soft-strong: rgba(255, 209, 102, 0.28);
+}
+
+[data-theme="dark"] .service-item.service-campus .service-icon {
+  --svc-accent: #68d5ff;
+  --svc-soft: rgba(104, 213, 255, 0.18);
+  --svc-soft-strong: rgba(104, 213, 255, 0.28);
+}
+
+.service-icon .service-symbol {
   width: 78px;
   height: 78px;
   display: block;
+}
+
+.service-icon .svc-stroke,
+.service-icon .svc-muted,
+.service-icon .svc-accent {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.service-icon .svc-stroke {
+  stroke: var(--svc-stroke);
+  stroke-width: 2.2;
+}
+
+.service-icon .svc-muted {
+  stroke: var(--svc-muted);
+  stroke-width: 2.05;
+}
+
+.service-icon .svc-accent {
+  stroke: var(--svc-accent);
+  stroke-width: 2.3;
+}
+
+.service-icon .svc-soft {
+  fill: var(--svc-soft);
+}
+
+.service-icon .svc-soft-strong {
+  fill: var(--svc-soft-strong);
+}
+
+.service-icon .svc-dot {
+  fill: var(--svc-accent);
+}
+
+.service-icon .svc-dot-muted {
+  fill: var(--svc-muted);
 }
 
 .service-item span {
@@ -353,7 +500,7 @@
     margin-bottom: 8px;
   }
 
-  .service-icon svg {
+  .service-icon .service-symbol {
     width: 58px;
     height: 58px;
   }
