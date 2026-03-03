@@ -81,6 +81,10 @@ function itstudio_enqueue_scripts() {
     wp_enqueue_script('itstudio-theme-toggle', get_template_directory_uri() . '/assets/js/theme-toggle.js', array(), '1.0.0', true);
     wp_enqueue_script('itstudio-lang-toggle', get_template_directory_uri() . '/assets/js/lang-toggle.js', array(), '1.0.0', true);
     wp_enqueue_script('itstudio-main', get_template_directory_uri() . '/assets/js/main.js', array(), '1.0.0', true);
+
+    if (is_singular(array('post', 'announcement', 'news'))) {
+        wp_enqueue_script('itstudio-single-title-fit', get_template_directory_uri() . '/assets/js/single-title-fit.js', array(), '1.0.0', true);
+    }
 }
 add_action('wp_enqueue_scripts', 'itstudio_enqueue_scripts');
 
@@ -484,6 +488,146 @@ function itstudio_get_post_excerpt_chars($post_id, $limit = 200) {
     return wp_html_excerpt($excerpt, $limit, '...');
 }
 
+function itstudio_is_probably_bot_request() {
+    $user_agent = strtolower(trim((string) ($_SERVER['HTTP_USER_AGENT'] ?? '')));
+    if ($user_agent === '') {
+        return true;
+    }
+
+    $bot_signatures = array(
+        'bot',
+        'spider',
+        'crawl',
+        'slurp',
+        'headless',
+        'preview',
+        'facebookexternalhit',
+        'discordbot',
+        'telegrambot',
+        'linkedinbot',
+        'applebot',
+        'googlebot',
+        'bingbot',
+        'wget',
+        'curl',
+        'python-requests',
+        'postmanruntime',
+    );
+
+    foreach ($bot_signatures as $signature) {
+        if (strpos($user_agent, $signature) !== false) {
+            return true;
+        }
+    }
+
+    $purpose = strtolower((string) ($_SERVER['HTTP_PURPOSE'] ?? ''));
+    $sec_purpose = strtolower((string) ($_SERVER['HTTP_SEC_PURPOSE'] ?? ''));
+    $x_moz = strtolower((string) ($_SERVER['HTTP_X_MOZ'] ?? ''));
+    if (strpos($purpose, 'prefetch') !== false || strpos($sec_purpose, 'prefetch') !== false || $x_moz === 'prefetch') {
+        return true;
+    }
+
+    return false;
+}
+
+function itstudio_get_view_cookie_name() {
+    return 'itstudio_viewed_posts';
+}
+
+function itstudio_read_view_cookie_map() {
+    $cookie_name = itstudio_get_view_cookie_name();
+    $raw_cookie = isset($_COOKIE[$cookie_name]) ? wp_unslash((string) $_COOKIE[$cookie_name]) : '';
+    if ($raw_cookie === '') {
+        return array();
+    }
+
+    $decoded = json_decode($raw_cookie, true);
+    if (!is_array($decoded)) {
+        return array();
+    }
+
+    $clean = array();
+    foreach ($decoded as $post_id => $timestamp) {
+        $post_id = (int) $post_id;
+        $timestamp = (int) $timestamp;
+        if ($post_id > 0 && $timestamp > 0) {
+            $clean[(string) $post_id] = $timestamp;
+        }
+    }
+
+    return $clean;
+}
+
+function itstudio_write_view_cookie_map($map, $window_seconds) {
+    if (!headers_sent()) {
+        $cookie_name = itstudio_get_view_cookie_name();
+        $expire_at = time() + max(DAY_IN_SECONDS, (int) $window_seconds * 2);
+        $path = defined('COOKIEPATH') && COOKIEPATH ? COOKIEPATH : '/';
+        $domain = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+        $secure = is_ssl();
+        $http_only = true;
+        $encoded = wp_json_encode($map);
+        if (!is_string($encoded)) {
+            return;
+        }
+
+        if (PHP_VERSION_ID >= 70300) {
+            setcookie($cookie_name, $encoded, array(
+                'expires' => $expire_at,
+                'path' => $path,
+                'domain' => $domain,
+                'secure' => $secure,
+                'httponly' => $http_only,
+                'samesite' => 'Lax',
+            ));
+        } else {
+            setcookie($cookie_name, $encoded, $expire_at, $path, $domain, $secure, $http_only);
+        }
+
+        $_COOKIE[$cookie_name] = $encoded;
+    }
+}
+
+function itstudio_should_count_post_view($post_id) {
+    $post_id = (int) $post_id;
+    if ($post_id <= 0) {
+        return false;
+    }
+
+    if (itstudio_is_probably_bot_request()) {
+        return false;
+    }
+
+    $window_seconds = (int) apply_filters('itstudio_post_view_window_seconds', 12 * HOUR_IN_SECONDS);
+    $window_seconds = max(60, $window_seconds);
+    $max_entries = (int) apply_filters('itstudio_post_view_cookie_max_entries', 120);
+    $max_entries = max(10, $max_entries);
+
+    $now = time();
+    $key = (string) $post_id;
+    $map = itstudio_read_view_cookie_map();
+
+    foreach ($map as $id => $timestamp) {
+        if (($now - (int) $timestamp) > $window_seconds) {
+            unset($map[$id]);
+        }
+    }
+
+    if (isset($map[$key]) && ($now - (int) $map[$key]) < $window_seconds) {
+        return false;
+    }
+
+    $map[$key] = $now;
+    if (count($map) > $max_entries) {
+        asort($map, SORT_NUMERIC);
+        $map = array_slice($map, -$max_entries, null, true);
+    }
+
+    itstudio_write_view_cookie_map($map, $window_seconds);
+
+    return true;
+}
+
 function itstudio_track_post_views() {
     if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
         return;
@@ -499,6 +643,10 @@ function itstudio_track_post_views() {
 
     $post_id = (int) get_queried_object_id();
     if ($post_id <= 0) {
+        return;
+    }
+
+    if (!itstudio_should_count_post_view($post_id)) {
         return;
     }
 

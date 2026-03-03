@@ -161,6 +161,320 @@
 }
 
 /* =========================================
+   文章页（简洁大气）
+   ========================================= */
+
+.single-article-page {
+  padding: 46px 0 72px;
+}
+
+.single-article-shell {
+  max-width: 1320px;
+}
+
+.single-article {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.single-article-header {
+  text-align: center;
+}
+
+.single-article-kicker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.single-article-kicker-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.single-article-kicker-link:hover {
+  color: var(--color-primary);
+}
+
+.single-article-title {
+  margin: 0;
+  font-size: clamp(2.3rem, 4.7vw, 5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.single-article-meta {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: baseline;
+  column-gap: 16px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.94rem;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.single-article-meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.single-article-meta-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.single-article-meta-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.single-article-body {
+  width: 100%;
+  max-width: 1080px;
+  margin: 52px auto 0;
+  color: var(--text-primary);
+  font-size: clamp(1.14rem, 1.2vw, 1.28rem);
+  line-height: 1.82;
+  font-family: "Times New Roman", Times, "Nimbus Roman No9 L", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", var(--font-sans);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.single-article-body > * {
+  margin: 0 0 1.25em;
+}
+
+.single-article-body h2,
+.single-article-body h3,
+.single-article-body h4 {
+  margin-top: 1.7em;
+  line-height: 1.35;
+  font-family: inherit;
+}
+
+.single-article-body h2 {
+  font-size: clamp(1.45rem, 1.6vw, 2rem);
+}
+
+.single-article-body h3 {
+  font-size: clamp(1.2rem, 1.2vw, 1.55rem);
+}
+
+.single-article-body a {
+  color: var(--text-primary);
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+}
+
+.single-article-body a:hover {
+  color: var(--color-primary);
+}
+
+.single-article-body blockquote {
+  margin: 1.5em 0;
+  padding: 0.2em 0 0.2em 1.1em;
+  border-left: 3px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+.single-article-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.single-article-body pre {
+  padding: 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  overflow: auto;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.single-article-body code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+  border-radius: 4px;
+  padding: 0.12em 0.35em;
+}
+
+.single-article-tags {
+  width: 100%;
+  max-width: 1080px;
+  margin: 30px auto 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.single-article-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+}
+
+.single-article-tag:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.single-related {
+  max-width: 1180px;
+  margin: 62px auto 0;
+}
+
+.single-divider {
+  border-top: 1px solid var(--border-default);
+}
+
+.single-related-title {
+  margin: 44px 0 24px;
+  color: var(--text-primary);
+  font-size: clamp(1.8rem, 2vw, 2.5rem);
+  letter-spacing: -0.01em;
+}
+
+.single-related-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.single-related-card {
+  min-width: 0;
+}
+
+.single-related-card-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 1.2vw, 1.75rem);
+  line-height: 1.3;
+}
+
+.single-related-card-title a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.single-related-card-title a:hover {
+  color: var(--color-primary);
+}
+
+.single-related-card-excerpt {
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.66;
+  font-size: 1rem;
+  font-family: "Times New Roman", Times, "Nimbus Roman No9 L", "Noto Sans SC", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", var(--font-sans);
+}
+
+.single-related-card-link {
+  margin-top: 16px;
+  display: inline-block;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 1.02rem;
+}
+
+.single-related-card-link:hover {
+  color: var(--color-primary);
+}
+
+.single-related-empty {
+  color: var(--text-secondary);
+}
+
+.single-article-comments {
+  max-width: 900px;
+  margin: 64px auto 0;
+}
+
+@media (max-width: 980px) {
+  .single-article-page {
+    padding: 34px 0 56px;
+  }
+
+  .single-article-body {
+    margin-top: 42px;
+    font-size: 1.1rem;
+    line-height: 1.75;
+  }
+
+  .single-related-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .single-article-kicker {
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .single-article-meta {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-top: 18px;
+    font-size: 0.8rem;
+  }
+
+  .single-article-body {
+    margin-top: 30px;
+    font-size: 1.02rem;
+    line-height: 1.72;
+  }
+
+  .single-related {
+    margin-top: 44px;
+  }
+
+  .single-related-title {
+    margin-top: 34px;
+    margin-bottom: 18px;
+  }
+
+  .single-related-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .single-article-comments {
+    margin-top: 48px;
+  }
+}
+
+/* =========================================
    GitHub 风格博客
    ========================================= */
 

@@ -1,108 +1,138 @@
 <?php get_header(); ?>
 
-<main class="site-main single-post-gh-pro">
-    <div class="container">
-        <?php
-        while (have_posts()) :
-            the_post();
-        ?>
-            <!-- 1. 文章头部：极简极客风，去掉 Issue 编号等干扰 -->
-            <header class="gh-pro-header">
-                <div class="gh-pro-meta-top">
-                    <?php
-                    $categories = get_the_category();
-                    if ($categories) :
-                        $cat = $categories[0];
-                        echo '<a href="' . get_category_link($cat->term_id) . '" class="gh-label-category">' . $cat->name . '</a>';
-                    endif;
-                    ?>
-                </div>
+<main class="site-main single-article-page">
+    <div class="container single-article-shell">
+        <?php while (have_posts()) : the_post(); ?>
+            <?php
+            $post_id = get_the_ID();
+            $post_type = get_post_type($post_id);
+            $post_type_object = get_post_type_object($post_type);
+            $post_type_archive_url = get_post_type_archive_link($post_type);
+            $post_type_label_en = $post_type_object ? $post_type_object->labels->name : '';
+            $post_type_label_cn = $post_type_label_en;
+            if ($post_type === 'announcement') {
+                $post_type_label_cn = '公告通知';
+                $post_type_label_en = 'Announcements';
+            } elseif ($post_type === 'news') {
+                $post_type_label_cn = '社团新闻';
+                $post_type_label_en = 'News';
+            } elseif ($post_type === 'post') {
+                $post_type_label_cn = '技术博客';
+                $post_type_label_en = 'Blog';
+            }
+            $views = function_exists('itstudio_get_post_views') ? (int) itstudio_get_post_views($post_id) : 0;
 
-                <h1 class="entry-title"><?php the_title(); ?></h1>
+            ?>
 
-                <div class="gh-pro-meta-bar">
-                    <div class="gh-author-lockup">
-                        <?php echo get_avatar(get_the_author_meta('ID'), 32); ?>
-                        <span class="author-name"><?php the_author(); ?></span>
-                        <span class="meta-divider">/</span>
-                        <span class="publish-date"><?php echo get_the_date('Y.m.d'); ?></span>
+            <article id="post-<?php the_ID(); ?>" <?php post_class('single-article'); ?>>
+                <header class="single-article-header">
+                    <div class="single-article-kicker">
+                        <?php if (!empty($post_type_archive_url) && !empty($post_type_label_en)) : ?>
+                            <a class="single-article-kicker-link" href="<?php echo esc_url($post_type_archive_url); ?>" data-cn="<?php echo esc_attr($post_type_label_cn); ?>" data-en="<?php echo esc_attr($post_type_label_en); ?>"><?php echo esc_html($post_type_label_en); ?></a>
+                        <?php endif; ?>
                     </div>
 
-                    <div class="gh-stats">
-                        <span class="stat-item" title="<?php esc_attr_e('Comments', 'itstudio'); ?>">
-                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-comment"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path></svg>
-                            <?php comments_number('0', '1', '%'); ?>
+                    <h1 class="single-article-title"><?php the_title(); ?></h1>
+
+                    <div class="single-article-meta">
+                        <span class="single-article-meta-item">
+                            <span class="single-article-meta-label" data-cn="发布日期：" data-en="Published: ">Published: </span>
+                            <time class="single-article-meta-value" datetime="<?php echo esc_attr(get_the_date('c')); ?>"><?php echo esc_html(get_the_date('Y年m月d日')); ?></time>
+                        </span>
+                        <span class="single-article-meta-item">
+                            <span class="single-article-meta-label" data-cn="作者：" data-en="Author: ">Author: </span>
+                            <span class="single-article-meta-value"><?php echo esc_html(get_the_author()); ?></span>
+                        </span>
+                        <span class="single-article-meta-item">
+                            <span class="single-article-meta-label" data-cn="浏览量：" data-en="Views: ">Views: </span>
+                            <span class="single-article-meta-value"><?php echo esc_html(number_format_i18n($views)); ?></span>
                         </span>
                     </div>
-                </div>
-            </header>
+                </header>
 
-            <!-- 2. 正文容器：类似 GitHub File/Readme 的框体风格 -->
-            <div class="gh-pro-body-container">
-                <div class="gh-file-box">
-                    <div class="gh-file-header">
-                        <div class="file-info">
-                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-book"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path></svg>
-                            <strong>readme.md</strong>
-                            <span class="file-divider"></span>
-                            <span class="file-size">
-                                <?php
-                                    $read_time = round(str_word_count(strip_tags(get_the_content())) / 300, 1);
-                                    printf(
-                                        '<span data-cn="%s 分钟阅读" data-en="%s mins read"></span>',
-                                        $read_time,
-                                        $read_time
-                                    );
-                                ?>
-                            </span>
-                        </div>
-                        <div class="file-actions">
-                             <a href="#comments" class="btn-sm" data-cn="发表评论" data-en="Post Comment"></a>
-                        </div>
+                <div class="single-article-body">
+                    <?php the_content(); ?>
+                </div>
+
+                <?php
+                $tags = get_the_terms($post_id, 'post_tag');
+                if (!empty($tags) && !is_wp_error($tags)) :
+                ?>
+                    <footer class="single-article-tags">
+                        <?php foreach (array_slice($tags, 0, 8) as $tag) : ?>
+                            <?php $tag_link = get_term_link($tag); ?>
+                            <?php if (!is_wp_error($tag_link)) : ?>
+                                <a class="single-article-tag" href="<?php echo esc_url($tag_link); ?>">#<?php echo esc_html($tag->name); ?></a>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </footer>
+                <?php endif; ?>
+            </article>
+
+            <section class="single-related">
+                <div class="single-divider" aria-hidden="true"></div>
+                <h2 class="single-related-title" data-cn="相关阅读" data-en="Related Content">Related Content</h2>
+
+                <?php
+                $related_args = array(
+                    'post_type' => $post_type,
+                    'post_status' => 'publish',
+                    'posts_per_page' => 3,
+                    'post__not_in' => array($post_id),
+                    'ignore_sticky_posts' => true,
+                    'orderby' => 'date',
+                    'order' => 'DESC',
+                );
+                $tag_ids = wp_get_post_terms($post_id, 'post_tag', array('fields' => 'ids'));
+                if (!empty($tag_ids) && !is_wp_error($tag_ids)) {
+                    $related_args['tax_query'] = array(
+                        array(
+                            'taxonomy' => 'post_tag',
+                            'field' => 'term_id',
+                            'terms' => $tag_ids,
+                        ),
+                    );
+                }
+
+                $related_query = new WP_Query($related_args);
+                if (!$related_query->have_posts() && isset($related_args['tax_query'])) {
+                    unset($related_args['tax_query']);
+                    $related_query = new WP_Query($related_args);
+                }
+                ?>
+
+                <div class="single-related-grid">
+                    <?php if ($related_query->have_posts()) : ?>
+                        <?php while ($related_query->have_posts()) : $related_query->the_post(); ?>
+                            <?php
+                            $related_excerpt = function_exists('itstudio_get_post_excerpt_chars')
+                                ? itstudio_get_post_excerpt_chars(get_the_ID(), 96)
+                                : wp_html_excerpt(wp_strip_all_tags(get_the_excerpt() ?: get_the_content()), 96, '...');
+                            ?>
+                            <article class="single-related-card">
+                                <h3 class="single-related-card-title"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+                                <p class="single-related-card-excerpt"><?php echo esc_html($related_excerpt); ?></p>
+                                <a class="single-related-card-link" href="<?php the_permalink(); ?>" data-cn="阅读更多 ->" data-en="Read more ->">Read more -></a>
+                            </article>
+                        <?php endwhile; ?>
+                        <?php wp_reset_postdata(); ?>
+                    <?php else : ?>
+                        <p class="single-related-empty" data-cn="暂无相关文章" data-en="No related content">No related content</p>
+                    <?php endif; ?>
+                </div>
+            </section>
+
+            <?php if (comments_open() || get_comments_number()) : ?>
+                <section class="single-article-comments gh-pro-comments">
+                    <div class="timeline-header">
+                        <h3 data-cn="文章讨论" data-en="Discussion"></h3>
                     </div>
 
-                    <div class="gh-file-content markdown-body">
-                         <?php if (has_post_thumbnail()) : ?>
-                            <div class="entry-thumbnail-pro">
-                                <?php the_post_thumbnail('large'); ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php the_content(); ?>
-
-                        <div class="gh-file-footer">
-                             <?php
-                                $tags = get_the_tags();
-                                if ($tags) :
-                                    foreach ($tags as $tag) {
-                                        echo '<span class="gh-tag tag-tag">#' . $tag->name . '</span> ';
-                                    }
-                                endif;
-                             ?>
-                        </div>
+                    <div class="gh-timeline">
+                        <?php comments_template(); ?>
                     </div>
-                </div>
-            </div>
-
-            <!-- 3. 评论区：保持 GitHub Timeline 风格 -->
-            <div class="gh-pro-comments">
-                <div class="timeline-header">
-                    <h3 data-cn="文章讨论" data-en="Discussion"></h3>
-                </div>
-
-                <div class="gh-timeline">
-                    <!-- Vertical Line -->
-                    <div class="timeline-line"></div>
-
-                    <?php
-                    // 直接加载评论模板
-                    if (comments_open() || get_comments_number()) :
-                        comments_template();
-                    endif;
-                    ?>
-                </div>
-            </div>
-
+                </section>
+            <?php endif; ?>
         <?php endwhile; ?>
     </div>
 </main>
