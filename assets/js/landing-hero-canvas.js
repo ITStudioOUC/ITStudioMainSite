@@ -683,17 +683,6 @@
     ctx.fillStyle = palette.divider;
     ctx.fillRect(gutterWidth, 0, 1, height);
 
-    ctx.strokeStyle = palette.guide;
-    ctx.lineWidth = 1;
-    const guideOffset = compact ? (narrow ? 54 : 64) : 110;
-    const guideGap = compact ? (narrow ? 68 : 76) : 120;
-    for (let x = codeStartX + guideOffset; x < width; x += guideGap) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    }
-
     const cyclePos = isStatic ? totalTypingDuration + holdDuration : elapsed % cycleDuration;
     const writingPhase = cyclePos < totalTypingDuration;
 
