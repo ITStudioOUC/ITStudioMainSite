@@ -122,17 +122,6 @@
                 </div>
             </section>
 
-            <?php if (comments_open() || get_comments_number()) : ?>
-                <section class="single-article-comments gh-pro-comments">
-                    <div class="timeline-header">
-                        <h3 data-cn="文章讨论" data-en="Discussion"></h3>
-                    </div>
-
-                    <div class="gh-timeline">
-                        <?php comments_template(); ?>
-                    </div>
-                </section>
-            <?php endif; ?>
         <?php endwhile; ?>
     </div>
 </main>

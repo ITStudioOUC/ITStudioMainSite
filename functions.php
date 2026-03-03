@@ -6,8 +6,6 @@ function itstudio_theme_setup() {
     add_theme_support('automatic-feed-links');
     add_theme_support('html5', array(
         'search-form',
-        'comment-form',
-        'comment-list',
         'gallery',
         'caption',
     ));
@@ -19,6 +17,47 @@ function itstudio_theme_setup() {
     load_theme_textdomain('itstudio', get_template_directory() . '/languages');
 }
 add_action('after_setup_theme', 'itstudio_theme_setup');
+
+add_filter('comments_open', '__return_false', 20, 2);
+add_filter('pings_open', '__return_false', 20, 2);
+add_filter('comments_array', '__return_empty_array', 10, 2);
+
+function itstudio_disable_comments_post_types() {
+    $post_types = array('post', 'page', 'announcement', 'news');
+    foreach ($post_types as $post_type) {
+        if (post_type_supports($post_type, 'comments')) {
+            remove_post_type_support($post_type, 'comments');
+        }
+        if (post_type_supports($post_type, 'trackbacks')) {
+            remove_post_type_support($post_type, 'trackbacks');
+        }
+    }
+}
+add_action('init', 'itstudio_disable_comments_post_types', 100);
+
+function itstudio_hide_comments_menu() {
+    remove_menu_page('edit-comments.php');
+}
+add_action('admin_menu', 'itstudio_hide_comments_menu', 999);
+
+function itstudio_hide_admin_bar_comments() {
+    remove_action('admin_bar_menu', 'wp_admin_bar_comments_menu', 60);
+}
+add_action('init', 'itstudio_hide_admin_bar_comments');
+
+function itstudio_redirect_comments_admin_pages() {
+    global $pagenow;
+    if ($pagenow === 'edit-comments.php' || $pagenow === 'comment.php') {
+        wp_safe_redirect(admin_url());
+        exit;
+    }
+}
+add_action('admin_init', 'itstudio_redirect_comments_admin_pages');
+
+function itstudio_remove_comments_dashboard_widget() {
+    remove_meta_box('dashboard_recent_comments', 'dashboard', 'normal');
+}
+add_action('wp_dashboard_setup', 'itstudio_remove_comments_dashboard_widget');
 
 function itstudio_apply_site_identity() {
     $site_name = base64_decode('54ix54m55bel5L2c5a6k');
@@ -329,81 +368,6 @@ function itstudio_news_fallback() {
     }
 }
 add_action('template_redirect', 'itstudio_news_fallback');
-
-/**
- * GitHub 风格评论
- */
-function itstudio_comment_callback($comment, $args, $depth) {
-    ?>
-    <li id="comment-<?php comment_ID(); ?>" <?php comment_class('gh-comment-item'); ?>>
-        <div class="gh-comment-avatar">
-            <?php if ($args['avatar_size'] != 0) echo get_avatar($comment, $args['avatar_size']); ?>
-        </div>
-        <div class="gh-comment-box">
-            <div class="gh-comment-header">
-                <div class="gh-comment-meta">
-                    <span class="gh-author-name"><?php echo get_comment_author_link(); ?></span>
-                    <!-- 双语支持: commented on / 评论于 -->
-                    <span class="gh-action-text" data-cn="评论于" data-en="commented on"></span>
-                    <a href="<?php echo htmlspecialchars(get_comment_link($comment->comment_ID)); ?>">
-                        <time datetime="<?php comment_time('c'); ?>">
-                            <?php
-                                // 处理时间双语
-                                $time_diff = human_time_diff(get_comment_time('U'), current_time('timestamp'));
-                                // 简单的替换逻辑，或者直接输出两个 span
-                                printf(
-                                    '<span data-cn="%s前" data-en="%s ago"></span>',
-                                    $time_diff, // 中文环境通常也是数字+单位(如 5 分钟)，这里简化处理，假设 time_diff 本身已本地化或接受英文
-                                    $time_diff
-                                );
-                                // 注意：WP的 human_time_diff 返回的是翻译后的字符串（如果后台是中文），
-                                // 要实现完美的前端双语切换，需要一种不依赖后台语言设置的方式，或者接受后台返回当前语言的时间。
-                                // 鉴于切换是纯前端的，最佳方式是让 PHP 输出特定格式，前端解析，但这里为了简单，
-                                // 我们假设 time_diff 主要是数字+单位。
-                                // 更稳妥的方式是直接显示标准日期格式，或者接受当前状态。
-                                // 这里先简单处理结构。
-                            ?>
-                        </time>
-                    </a>
-                    <?php
-                    // Author Badge
-                    $post = get_post();
-                    if ($comment->user_id === $post->post_author) {
-                        // 双语支持: Author / 作者
-                        echo '<span class="gh-badge author" data-cn="作者" data-en="Author"></span>';
-                    }
-                    ?>
-                </div>
-                <div class="gh-header-actions">
-                    <?php edit_comment_link('', '', '', null, 'gh-edit-link'); /* 获取链接URL逻辑较复杂，这里直接用 edit_comment_link 输出，但内容需要自定义 */ ?>
-                    <span class="edit-link-wrapper">
-                        <?php
-                        // 为了支持双语，我们不仅需要 URL，还需要在这里手动构造 A 标签，或者利用 PHP 里的 filter
-                        // 但 edit_comment_link 直接输出 HTML。
-                        // 简单方案：输出时内容留空，用 CSS 伪元素填充。
-                        // edit_comment_link( $text, $before, $after )
-                        // 我们可以把 $text 设为空字符串，并给 wrapper 加 data 属性？ 不行，A标签内部是空的。
-                        // 我们可以让 A 标签带上 data 属性吗？ edit_comment_link 没有直接参数加属性到 A 标签。
-                        // 替代方案：手动构建
-                        if (current_user_can('edit_comment', $comment->comment_ID)) {
-                            $edit_url = get_edit_comment_link($comment->comment_ID);
-                            echo '<a class="comment-edit-link" href="' . esc_url($edit_url) . '" data-cn="编辑" data-en="Edit"></a>';
-                        }
-                        ?>
-                    </span>
-                </div>
-            </div>
-            <div class="gh-comment-body">
-                <?php if ($comment->comment_approved == '0') : ?>
-                    <em class="comment-awaiting-moderation" data-cn="您的评论正在等待审核。" data-en="Your comment is awaiting moderation."></em>
-                    <br />
-                <?php endif; ?>
-                <?php comment_text(); ?>
-            </div>
-        </div>
-    </li>
-    <?php
-}
 
 function itstudio_get_post_views($post_id) {
     $post_id = (int) $post_id;
