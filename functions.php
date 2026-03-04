@@ -124,8 +124,9 @@ function itstudio_enqueue_scripts() {
 
     if ($is_about) {
         wp_enqueue_style('itstudio-about-hero', get_template_directory_uri() . '/assets/css/about-hero.css', array('itstudio-content'), '2.1.2');
-        wp_enqueue_script('itstudio-about-hero-waves', get_template_directory_uri() . '/assets/js/hero-waves.js', array(), '1.0.0', true);
-        wp_enqueue_script('itstudio-about-hero', get_template_directory_uri() . '/assets/js/home-hero.js', array(), '1.0.0', true);
+        wp_enqueue_script('itstudio-animejs', get_template_directory_uri() . '/assets/js/vendor/anime.min.js', array(), '3.2.2', true);
+        wp_enqueue_script('itstudio-about-hero-waves', get_template_directory_uri() . '/assets/js/hero-waves.js', array('itstudio-animejs'), '1.0.0', true);
+        wp_enqueue_script('itstudio-about-hero', get_template_directory_uri() . '/assets/js/home-hero.js', array('itstudio-animejs'), '1.0.0', true);
     }
 
     // 仅在便民服务页加载（包含 /services fallback）

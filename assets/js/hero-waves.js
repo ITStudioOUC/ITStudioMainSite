@@ -15,15 +15,15 @@
   let rafId = null;
 
   const waveDefs = [
-    { yRatio: 0.3, amplitude: 22, wavelength: 940, speed: 0.5, alpha: 0.98 },
-    { yRatio: 0.45, amplitude: 16, wavelength: 1020, speed: 0.58, alpha: 0.92 },
-    { yRatio: 0.65, amplitude: 14, wavelength: 1160, speed: 0.6, alpha: 0.9 },
+    { yRatio: 0.3, amplitude: 24, wavelength: 940, speed: 0.5, alpha: 0.98 },
+    { yRatio: 0.45, amplitude: 14, wavelength: 1020, speed: 0.58, alpha: 0.92 },
+    { yRatio: 0.65, amplitude: 10, wavelength: 1160, speed: 0.6, alpha: 0.9 },
   ];
 
   const palettes = {
     light: {
-      gradient: ['#e8f3ff', '#cfe6fb', '#558ec1', '#2476af', '#2b6fb3'],
-      waves: ['rgba(170, 215, 245, 0.91)', 'rgba(120, 185, 230, 0.93)', 'rgba(80, 155, 210, 0.95)'],
+      gradient: ['#d6e8fa', '#a7c8e8', '#6f9fc8', '#4f84b6', '#376e9f'],
+      waves: ['rgba(124, 167, 205, 0.96)', 'rgba(90, 143, 190, 0.97)', 'rgba(62, 118, 169, 0.98)'],
     },
     dark: {
       gradient: ['#0d1117', '#111d2b', '#14334d', '#17507a', '#1b6aa6'],
