@@ -78,12 +78,24 @@ function itstudio_output_favicon() {
     echo '<link rel="icon" href="' . esc_url($favicon_url) . '" type="image/svg+xml">' . "\n";
     echo '<link rel="shortcut icon" href="' . esc_url($favicon_url) . '" type="image/svg+xml">' . "\n";
 }
+
+function itstudio_output_theme_bootstrap_script() {
+    echo '<meta name="color-scheme" content="dark light">' . "\n";
+    echo '<script>(function(){var d=document.documentElement;var t="light";try{var s=localStorage.getItem("theme");if(s==="dark"||s==="light"){t=s;}else if(window.matchMedia){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}catch(e){if(window.matchMedia){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}d.setAttribute("data-theme",t);d.style.colorScheme=t;})();</script>' . "\n";
+}
+
+function itstudio_output_lang_bootstrap_script() {
+    echo '<style id="itstudio-lang-boot-style">html.itstudio-lang-pending body{visibility:hidden;}</style>' . "\n";
+    echo '<script>(function(){var d=document.documentElement;var lang="zh";d.classList.add("itstudio-lang-pending");try{var s=localStorage.getItem("language");if(s==="zh"||s==="en"){lang=s;}}catch(e){}d.setAttribute("lang",lang);window.__ITSTUDIO_LANG__=lang;var apply=function(root){var scope=root||document;var txt=scope.querySelectorAll("[data-cn][data-en]");for(var i=0;i<txt.length;i++){var el=txt[i];var next=lang==="en"?el.getAttribute("data-en"):el.getAttribute("data-cn");if(!next){continue;}if(el.tagName==="INPUT"||el.tagName==="TEXTAREA"){var tp=(el.getAttribute("type")||"").toLowerCase();if(tp==="submit"||tp==="button"||tp==="reset"){el.value=next;continue;}}el.textContent=next;}var ph=scope.querySelectorAll("[data-cn-placeholder][data-en-placeholder]");for(var j=0;j<ph.length;j++){var ep=ph[j];var pk=lang==="en"?"data-en-placeholder":"data-cn-placeholder";var pv=ep.getAttribute(pk);if(pv){ep.setAttribute("placeholder",pv);}}var ar=scope.querySelectorAll("[data-cn-aria-label][data-en-aria-label]");for(var k=0;k<ar.length;k++){var ea=ar[k];var ak=lang==="en"?"data-en-aria-label":"data-cn-aria-label";var av=ea.getAttribute(ak);if(av){ea.setAttribute("aria-label",av);}}};var finish=function(){if(document.body){document.body.setAttribute("lang",lang);}d.classList.remove("itstudio-lang-pending");var st=document.getElementById("itstudio-lang-boot-style");if(st&&st.parentNode){st.parentNode.removeChild(st);}};var run=function(){apply(document);finish();};if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",run,{once:true});}else{run();}})();</script>' . "\n";
+}
 function itstudio_disable_default_site_icon() {
     remove_action('wp_head', 'wp_site_icon', 99);
     remove_action('admin_head', 'wp_site_icon', 99);
     remove_action('login_head', 'wp_site_icon', 99);
 }
 add_action('init', 'itstudio_disable_default_site_icon');
+add_action('wp_head', 'itstudio_output_theme_bootstrap_script', 0);
+add_action('wp_head', 'itstudio_output_lang_bootstrap_script', 1);
 add_action('wp_head', 'itstudio_output_favicon', 1);
 add_action('admin_head', 'itstudio_output_favicon', 1);
 add_action('login_head', 'itstudio_output_favicon', 1);

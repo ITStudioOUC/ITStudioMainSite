@@ -2,6 +2,10 @@ const langToggle = document.querySelector('.lang-toggle');
 const body = document.body;
 
 function getPreferredLang() {
+  if (window.__ITSTUDIO_LANG__ === 'zh' || window.__ITSTUDIO_LANG__ === 'en') {
+    return window.__ITSTUDIO_LANG__;
+  }
+
   const savedLang = localStorage.getItem('language');
   if (savedLang === 'zh' || savedLang === 'en') {
     return savedLang;
