@@ -48,7 +48,7 @@ function setLang(lang) {
   if (langToggle) {
     const langText = langToggle.querySelector('.lang-text');
     if (langText) {
-      langText.textContent = lang === 'en' ? '\u4e2d' : 'EN';
+      langText.textContent = lang === 'en' ? '中' : 'EN';
     }
   }
 

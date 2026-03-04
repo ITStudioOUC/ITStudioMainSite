@@ -60,8 +60,8 @@ function itstudio_remove_comments_dashboard_widget() {
 add_action('wp_dashboard_setup', 'itstudio_remove_comments_dashboard_widget');
 
 function itstudio_apply_site_identity() {
-    $site_name = base64_decode('54ix54m55bel5L2c5a6k');
-    $site_tagline = base64_decode('54ix54m55bel5L2c5a6k5a6Y5pa5572R56uZ');
+    $site_name = '爱特工作室';
+    $site_tagline = '爱特工作室官方网站';
 
     if (get_option('blogname') !== $site_name) {
         update_option('blogname', $site_name);
@@ -256,9 +256,9 @@ add_action('acf/init', 'itstudio_register_acf_fields');
 
 function itstudio_archive_document_title($parts) {
     if (is_post_type_archive('announcement')) {
-        $parts['title'] = html_entity_decode('&#20844;&#21578;&#36890;&#30693;', ENT_QUOTES, 'UTF-8');
+        $parts['title'] = '公告通知';
     } elseif (is_post_type_archive('news')) {
-        $parts['title'] = html_entity_decode('&#31038;&#22242;&#26032;&#38395;', ENT_QUOTES, 'UTF-8');
+        $parts['title'] = '社团新闻';
     }
 
     return $parts;

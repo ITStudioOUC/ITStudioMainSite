@@ -52,9 +52,9 @@ git clone https://github.com/itstudio-2002/ITStudioMainSite.git
 推荐菜单结构：
 - 首页
 - 公告通知
-- 技术博客
+- 博客
 - 便民服务
-- 工作室介绍
+- 社团介绍
 - 加入我们
 
 #### 2. 发布公告

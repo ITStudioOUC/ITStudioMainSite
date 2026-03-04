@@ -19,11 +19,11 @@ if (!$archive_url) {
 
 $default_cover_url = get_template_directory_uri() . '/resources/it_logo_2024.svg';
 $weight_meta_key = 'itstudio_weight';
-$title_cn = $is_itstudio_news_page ? '&#31038;&#22242;&#26032;&#38395;' : '&#20844;&#21578;&#36890;&#30693;';
+$title_cn = $is_itstudio_news_page ? '社团新闻' : '公告通知';
 $title_en = $is_itstudio_news_page ? 'Club News' : 'Announcements';
-$empty_cn = $is_itstudio_news_page ? '&#26242;&#26080;&#26032;&#38395;' : '&#26242;&#26080;&#20844;&#21578;';
+$empty_cn = $is_itstudio_news_page ? '暂无新闻' : '暂无公告';
 $empty_en = $is_itstudio_news_page ? 'No news found.' : 'No announcements found.';
-$side_title_cn = $is_itstudio_news_page ? '&#35201;&#38395;' : '&#37325;&#35201;&#20844;&#21578;';
+$side_title_cn = $is_itstudio_news_page ? '要闻' : '重要公告';
 $side_title_en = $is_itstudio_news_page ? 'Top Stories' : 'Important Announcements';
 
 $list_query = new WP_Query(array(
@@ -83,12 +83,12 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                     value="<?php echo esc_attr($keyword); ?>"
                     placeholder="<?php esc_attr_e('Search posts...', 'itstudio'); ?>"
                     aria-label="<?php esc_attr_e('Search posts', 'itstudio'); ?>"
-                    data-cn-placeholder="&#25628;&#32034;&#25991;&#31456;..."
+                    data-cn-placeholder="搜索文章..."
                     data-en-placeholder="Search posts..."
-                    data-cn-aria-label="&#25628;&#32034;&#25991;&#31456;"
+                    data-cn-aria-label="搜索文章"
                     data-en-aria-label="Search posts"
                 >
-                <button type="submit" data-cn="&#25628;&#32034;" data-en="Search">Search</button>
+                <button type="submit" data-cn="搜索" data-en="Search">Search</button>
             </form>
         </div>
 
@@ -112,22 +112,22 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
 
                                     <div class="news-story-meta">
                                         <span class="news-story-meta-item">
-                                            <span data-cn="&#27983;&#35272;&#37327;" data-en="Views">Views</span>
+                                            <span data-cn="浏览量" data-en="Views">Views</span>
                                             <strong><?php echo esc_html(number_format_i18n($views)); ?></strong>
                                         </span>
                                         <span class="news-story-meta-dot" aria-hidden="true">/</span>
                                         <time class="news-story-meta-item" datetime="<?php echo esc_attr(get_the_date('c')); ?>">
-                                            <span data-cn="&#21457;&#34920;&#20110;" data-en="Published">Published</span>
+                                            <span data-cn="发表于" data-en="Published">Published</span>
                                             <?php echo esc_html(get_the_date('Y-m-d')); ?>
                                         </time>
                                         <span class="news-story-meta-dot" aria-hidden="true">/</span>
                                         <span class="news-story-meta-item">
-                                            <span data-cn="&#21457;&#24067;&#32773;" data-en="Author">Author</span>
+                                            <span data-cn="发布者" data-en="Author">Author</span>
                                             <?php echo esc_html(get_the_author()); ?>
                                         </span>
                                         <span class="news-story-meta-dot" aria-hidden="true">/</span>
                                         <span class="news-story-meta-item">
-                                            <span data-cn="&#23383;&#25968;" data-en="Words">Words</span>
+                                            <span data-cn="字数" data-en="Words">Words</span>
                                             <strong><?php echo esc_html(number_format_i18n($char_count)); ?></strong>
                                         </span>
                                     </div>
@@ -135,7 +135,7 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                     <p class="news-story-excerpt"><?php echo esc_html($excerpt); ?></p>
 
                                     <div class="news-story-tags">
-                                        <span class="news-story-tag-label" data-cn="&#26631;&#31614;" data-en="Tags">Tags</span>
+                                        <span class="news-story-tag-label" data-cn="标签" data-en="Tags">Tags</span>
                                         <?php if (!empty($tags) && !is_wp_error($tags)) : ?>
                                             <?php foreach (array_slice($tags, 0, 5) as $tag) : ?>
                                                 <?php $tag_link = get_term_link($tag); ?>
@@ -144,7 +144,7 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                                 <?php endif; ?>
                                             <?php endforeach; ?>
                                         <?php else : ?>
-                                            <span class="news-story-tag-empty" data-cn="&#26080;&#26631;&#31614;" data-en="No tags">No tags</span>
+                                            <span class="news-story-tag-empty" data-cn="无标签" data-en="No tags">No tags</span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -170,8 +170,8 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                 'current' => $paged,
                                 'total' => max(1, (int) $list_query->max_num_pages),
                                 'mid_size' => 2,
-                                'prev_text' => '<span data-cn="&#19978;&#19968;&#39029;" data-en="Previous">Previous</span>',
-                                'next_text' => '<span data-cn="&#19979;&#19968;&#39029;" data-en="Next">Next</span>',
+                                'prev_text' => '<span data-cn="上一页" data-en="Previous">Previous</span>',
+                                'next_text' => '<span data-cn="下一页" data-en="Next">Next</span>',
                                 'add_args' => array_filter(
                                     array(
                                         'q' => $keyword,
@@ -218,7 +218,7 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                             <time datetime="<?php echo esc_attr(get_the_date('c', $featured_id)); ?>"><?php echo esc_html(get_the_date('Y-m-d', $featured_id)); ?></time>
                                             <span class="news-side-meta-dot" aria-hidden="true">/</span>
                                             <span>
-                                                <span data-cn="&#27983;&#35272;" data-en="Views">Views</span>
+                                                <span data-cn="浏览" data-en="Views">Views</span>
                                                 <?php echo esc_html(number_format_i18n($featured_views)); ?>
                                             </span>
                                         </div>
@@ -226,7 +226,7 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                 </li>
                             <?php endforeach; ?>
                         <?php else : ?>
-                            <li class="news-side-empty" data-cn="&#26242;&#26080;&#25991;&#31456;" data-en="No posts found.">No posts found.</li>
+                            <li class="news-side-empty" data-cn="暂无文章" data-en="No posts found.">No posts found.</li>
                         <?php endif; ?>
                     </ul>
                 </section>
