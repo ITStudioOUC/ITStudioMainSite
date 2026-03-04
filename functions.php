@@ -23,7 +23,7 @@ add_filter('pings_open', '__return_false', 20, 2);
 add_filter('comments_array', '__return_empty_array', 10, 2);
 
 function itstudio_disable_comments_post_types() {
-    $post_types = array('post', 'page', 'announcement', 'news');
+    $post_types = array('post', 'page', 'announcement', 'news', 'service');
     foreach ($post_types as $post_type) {
         if (post_type_supports($post_type, 'comments')) {
             remove_post_type_support($post_type, 'comments');
@@ -116,6 +116,18 @@ function itstudio_enqueue_scripts() {
         wp_enqueue_script('itstudio-about-hero', get_template_directory_uri() . '/assets/js/home-hero.js', array(), '1.0.0', true);
     }
 
+    // 仅在便民服务页加载（包含 /services fallback）
+    $is_services = is_page('services') || is_page_template('page-services.php');
+    if (!$is_services && is_404()) {
+        global $wp;
+        $request = isset($wp->request) ? trim($wp->request, '/') : '';
+        $is_services = ($request === 'services');
+    }
+
+    if ($is_services) {
+        wp_enqueue_style('itstudio-services-page', get_template_directory_uri() . '/assets/css/services-page.css', array('itstudio-content'), '1.0.0');
+    }
+
     // Scripts
     wp_enqueue_script('itstudio-theme-toggle', get_template_directory_uri() . '/assets/js/theme-toggle.js', array(), '1.0.0', true);
     wp_enqueue_script('itstudio-lang-toggle', get_template_directory_uri() . '/assets/js/lang-toggle.js', array(), '1.0.0', true);
@@ -197,6 +209,47 @@ function itstudio_custom_post_types() {
         'show_in_rest' => true,
     ));
 
+    register_taxonomy('service_category', array('service'), array(
+        'labels' => array(
+            'name' => __('服务分类', 'itstudio'),
+            'singular_name' => __('服务分类', 'itstudio'),
+        ),
+        'hierarchical' => true,
+        'public' => true,
+        'show_ui' => true,
+        'show_admin_column' => false,
+        'show_in_rest' => true,
+        'rewrite' => array(
+            'slug' => 'service-category',
+            'with_front' => false,
+        ),
+    ));
+
+    register_post_type('service', array(
+        'labels' => array(
+            'name' => __('便民服务', 'itstudio'),
+            'singular_name' => __('便民服务', 'itstudio'),
+            'menu_name' => __('便民服务', 'itstudio'),
+            'add_new_item' => __('新增便民服务', 'itstudio'),
+            'edit_item' => __('编辑便民服务', 'itstudio'),
+        ),
+        'public' => true,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'show_in_nav_menus' => false,
+        'exclude_from_search' => true,
+        'publicly_queryable' => true,
+        'has_archive' => false,
+        'rewrite' => array(
+            'slug' => 'service',
+            'with_front' => false,
+        ),
+        'supports' => array('title', 'excerpt', 'thumbnail', 'page-attributes'),
+        'taxonomies' => array('service_category'),
+        'menu_icon' => 'dashicons-admin-tools',
+        'show_in_rest' => true,
+    ));
+
     register_taxonomy_for_object_type('post_tag', 'announcement');
     register_taxonomy_for_object_type('post_tag', 'news');
 }
@@ -253,6 +306,374 @@ function itstudio_register_acf_fields() {
     ));
 }
 add_action('acf/init', 'itstudio_register_acf_fields');
+
+function itstudio_get_service_url_meta_key() {
+    return '_itstudio_service_url';
+}
+
+function itstudio_get_service_title_cn_meta_key() {
+    return '_itstudio_service_title_cn';
+}
+
+function itstudio_get_service_title_en_meta_key() {
+    return '_itstudio_service_title_en';
+}
+
+function itstudio_get_service_excerpt_cn_meta_key() {
+    return '_itstudio_service_excerpt_cn';
+}
+
+function itstudio_get_service_excerpt_en_meta_key() {
+    return '_itstudio_service_excerpt_en';
+}
+
+function itstudio_get_service_category_name_cn_meta_key() {
+    return 'itstudio_service_category_name_cn';
+}
+
+function itstudio_get_service_category_name_en_meta_key() {
+    return 'itstudio_service_category_name_en';
+}
+
+function itstudio_get_service_category_i18n_labels($term) {
+    if (!$term || is_wp_error($term)) {
+        return array(
+            'cn' => '未分类',
+            'en' => 'Uncategorized',
+        );
+    }
+
+    $term_id = (int) $term->term_id;
+    $name_cn = trim((string) get_term_meta($term_id, itstudio_get_service_category_name_cn_meta_key(), true));
+    $name_en = trim((string) get_term_meta($term_id, itstudio_get_service_category_name_en_meta_key(), true));
+
+    if ($name_cn === '') {
+        $name_cn = (string) $term->name;
+    }
+    if ($name_en === '') {
+        $name_en = $name_cn;
+    }
+
+    return array(
+        'cn' => $name_cn,
+        'en' => $name_en,
+    );
+}
+
+function itstudio_get_service_i18n_content($service_id, $excerpt_limit = 90) {
+    $service_id = (int) $service_id;
+    if ($service_id <= 0) {
+        return array(
+            'title_cn' => '',
+            'title_en' => '',
+            'excerpt_cn' => '',
+            'excerpt_en' => '',
+        );
+    }
+
+    $title_cn = trim((string) get_post_meta($service_id, itstudio_get_service_title_cn_meta_key(), true));
+    $title_en = trim((string) get_post_meta($service_id, itstudio_get_service_title_en_meta_key(), true));
+    $excerpt_cn = trim((string) get_post_meta($service_id, itstudio_get_service_excerpt_cn_meta_key(), true));
+    $excerpt_en = trim((string) get_post_meta($service_id, itstudio_get_service_excerpt_en_meta_key(), true));
+
+    $fallback_title = trim((string) get_the_title($service_id));
+    if ($fallback_title === '') {
+        $fallback_title = '未命名服务';
+    }
+
+    $fallback_excerpt = function_exists('itstudio_get_post_excerpt_chars')
+        ? itstudio_get_post_excerpt_chars($service_id, $excerpt_limit)
+        : wp_html_excerpt(wp_strip_all_tags((string) get_post_field('post_excerpt', $service_id)), $excerpt_limit, '...');
+    $fallback_excerpt = trim((string) $fallback_excerpt);
+    if ($fallback_excerpt === '') {
+        $fallback_excerpt = '暂无简介';
+    }
+
+    if ($title_cn === '') {
+        $title_cn = $fallback_title;
+    }
+    if ($title_en === '') {
+        $title_en = $title_cn;
+    }
+    if ($excerpt_cn === '') {
+        $excerpt_cn = $fallback_excerpt;
+    }
+    if ($excerpt_en === '') {
+        $excerpt_en = $excerpt_cn;
+    }
+
+    return array(
+        'title_cn' => $title_cn,
+        'title_en' => $title_en,
+        'excerpt_cn' => $excerpt_cn,
+        'excerpt_en' => $excerpt_en,
+    );
+}
+
+function itstudio_add_service_meta_boxes() {
+    add_meta_box(
+        'itstudio_service_link',
+        __('服务双语与链接', 'itstudio'),
+        'itstudio_render_service_link_meta_box',
+        'service',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'itstudio_add_service_meta_boxes');
+
+function itstudio_render_service_link_meta_box($post) {
+    $service_url = (string) get_post_meta($post->ID, itstudio_get_service_url_meta_key(), true);
+    $title_cn = (string) get_post_meta($post->ID, itstudio_get_service_title_cn_meta_key(), true);
+    $title_en = (string) get_post_meta($post->ID, itstudio_get_service_title_en_meta_key(), true);
+    $excerpt_cn = (string) get_post_meta($post->ID, itstudio_get_service_excerpt_cn_meta_key(), true);
+    $excerpt_en = (string) get_post_meta($post->ID, itstudio_get_service_excerpt_en_meta_key(), true);
+    wp_nonce_field('itstudio_save_service_meta', 'itstudio_service_meta_nonce');
+    ?>
+    <p>
+        <label for="itstudio_service_title_cn"><strong><?php esc_html_e('中文名称', 'itstudio'); ?></strong></label>
+    </p>
+    <p>
+        <input
+            type="text"
+            id="itstudio_service_title_cn"
+            name="itstudio_service_title_cn"
+            class="widefat"
+            placeholder="<?php echo esc_attr((string) get_the_title($post)); ?>"
+            value="<?php echo esc_attr($title_cn); ?>"
+        >
+    </p>
+    <p>
+        <label for="itstudio_service_title_en"><strong><?php esc_html_e('英文名称', 'itstudio'); ?></strong></label>
+    </p>
+    <p>
+        <input
+            type="text"
+            id="itstudio_service_title_en"
+            name="itstudio_service_title_en"
+            class="widefat"
+            placeholder="Service Name"
+            value="<?php echo esc_attr($title_en); ?>"
+        >
+    </p>
+    <p>
+        <label for="itstudio_service_excerpt_cn"><strong><?php esc_html_e('中文简介', 'itstudio'); ?></strong></label>
+    </p>
+    <p>
+        <textarea
+            id="itstudio_service_excerpt_cn"
+            name="itstudio_service_excerpt_cn"
+            class="widefat"
+            rows="3"
+            placeholder="<?php echo esc_attr((string) get_the_excerpt($post)); ?>"
+        ><?php echo esc_textarea($excerpt_cn); ?></textarea>
+    </p>
+    <p>
+        <label for="itstudio_service_excerpt_en"><strong><?php esc_html_e('英文简介', 'itstudio'); ?></strong></label>
+    </p>
+    <p>
+        <textarea
+            id="itstudio_service_excerpt_en"
+            name="itstudio_service_excerpt_en"
+            class="widefat"
+            rows="3"
+            placeholder="Short English description"
+        ><?php echo esc_textarea($excerpt_en); ?></textarea>
+    </p>
+    <p>
+        <label for="itstudio_service_url"><strong><?php esc_html_e('目标链接', 'itstudio'); ?></strong></label>
+    </p>
+    <p>
+        <input
+            type="url"
+            id="itstudio_service_url"
+            name="itstudio_service_url"
+            class="widefat"
+            placeholder="https://example.com"
+            value="<?php echo esc_attr($service_url); ?>"
+        >
+    </p>
+    <p class="description">
+        <?php esc_html_e('支持分别填写中英文名称与简介；未填写时会回退到标题/摘要。', 'itstudio'); ?>
+    </p>
+    <?php
+}
+
+function itstudio_save_service_meta($post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!isset($_POST['itstudio_service_meta_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['itstudio_service_meta_nonce'])), 'itstudio_save_service_meta')) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (get_post_type($post_id) !== 'service') {
+        return;
+    }
+
+    $title_cn = isset($_POST['itstudio_service_title_cn']) ? sanitize_text_field(wp_unslash($_POST['itstudio_service_title_cn'])) : '';
+    $title_en = isset($_POST['itstudio_service_title_en']) ? sanitize_text_field(wp_unslash($_POST['itstudio_service_title_en'])) : '';
+    $excerpt_cn = isset($_POST['itstudio_service_excerpt_cn']) ? sanitize_textarea_field(wp_unslash($_POST['itstudio_service_excerpt_cn'])) : '';
+    $excerpt_en = isset($_POST['itstudio_service_excerpt_en']) ? sanitize_textarea_field(wp_unslash($_POST['itstudio_service_excerpt_en'])) : '';
+
+    $meta_updates = array(
+        itstudio_get_service_title_cn_meta_key() => trim($title_cn),
+        itstudio_get_service_title_en_meta_key() => trim($title_en),
+        itstudio_get_service_excerpt_cn_meta_key() => trim($excerpt_cn),
+        itstudio_get_service_excerpt_en_meta_key() => trim($excerpt_en),
+    );
+
+    foreach ($meta_updates as $meta_key => $value) {
+        if ($value === '') {
+            delete_post_meta($post_id, $meta_key);
+        } else {
+            update_post_meta($post_id, $meta_key, $value);
+        }
+    }
+
+    $url_meta_key = itstudio_get_service_url_meta_key();
+    $raw_url = isset($_POST['itstudio_service_url']) ? trim((string) wp_unslash($_POST['itstudio_service_url'])) : '';
+
+    if ($raw_url === '') {
+        delete_post_meta($post_id, $url_meta_key);
+        return;
+    }
+
+    if (strpos($raw_url, '/') === 0) {
+        $raw_url = home_url($raw_url);
+    }
+
+    $service_url = esc_url_raw($raw_url);
+    if ($service_url === '') {
+        delete_post_meta($post_id, $url_meta_key);
+        return;
+    }
+
+    update_post_meta($post_id, $url_meta_key, $service_url);
+}
+add_action('save_post_service', 'itstudio_save_service_meta');
+
+function itstudio_service_category_add_fields($taxonomy) {
+    wp_nonce_field('itstudio_save_service_category_meta', 'itstudio_service_category_meta_nonce');
+    ?>
+    <div class="form-field term-itstudio-service-name-cn-wrap">
+        <label for="itstudio_service_cat_name_cn"><?php esc_html_e('中文名称', 'itstudio'); ?></label>
+        <input type="text" name="itstudio_service_cat_name_cn" id="itstudio_service_cat_name_cn" value="">
+    </div>
+    <div class="form-field term-itstudio-service-name-en-wrap">
+        <label for="itstudio_service_cat_name_en"><?php esc_html_e('英文名称', 'itstudio'); ?></label>
+        <input type="text" name="itstudio_service_cat_name_en" id="itstudio_service_cat_name_en" value="" placeholder="Category Name">
+    </div>
+    <?php
+}
+add_action('service_category_add_form_fields', 'itstudio_service_category_add_fields');
+
+function itstudio_service_category_edit_fields($term) {
+    $term_id = (int) $term->term_id;
+    $name_cn = (string) get_term_meta($term_id, itstudio_get_service_category_name_cn_meta_key(), true);
+    $name_en = (string) get_term_meta($term_id, itstudio_get_service_category_name_en_meta_key(), true);
+    wp_nonce_field('itstudio_save_service_category_meta', 'itstudio_service_category_meta_nonce');
+    ?>
+    <tr class="form-field term-itstudio-service-name-cn-wrap">
+        <th scope="row"><label for="itstudio_service_cat_name_cn"><?php esc_html_e('中文名称', 'itstudio'); ?></label></th>
+        <td><input type="text" name="itstudio_service_cat_name_cn" id="itstudio_service_cat_name_cn" value="<?php echo esc_attr($name_cn); ?>"></td>
+    </tr>
+    <tr class="form-field term-itstudio-service-name-en-wrap">
+        <th scope="row"><label for="itstudio_service_cat_name_en"><?php esc_html_e('英文名称', 'itstudio'); ?></label></th>
+        <td><input type="text" name="itstudio_service_cat_name_en" id="itstudio_service_cat_name_en" value="<?php echo esc_attr($name_en); ?>" placeholder="Category Name"></td>
+    </tr>
+    <?php
+}
+add_action('service_category_edit_form_fields', 'itstudio_service_category_edit_fields');
+
+function itstudio_save_service_category_meta($term_id) {
+    if (!current_user_can('manage_categories')) {
+        return;
+    }
+
+    if (!isset($_POST['itstudio_service_category_meta_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['itstudio_service_category_meta_nonce'])), 'itstudio_save_service_category_meta')) {
+        return;
+    }
+
+    $name_cn = isset($_POST['itstudio_service_cat_name_cn']) ? sanitize_text_field(wp_unslash($_POST['itstudio_service_cat_name_cn'])) : '';
+    $name_en = isset($_POST['itstudio_service_cat_name_en']) ? sanitize_text_field(wp_unslash($_POST['itstudio_service_cat_name_en'])) : '';
+
+    $term_meta = array(
+        itstudio_get_service_category_name_cn_meta_key() => trim($name_cn),
+        itstudio_get_service_category_name_en_meta_key() => trim($name_en),
+    );
+
+    foreach ($term_meta as $meta_key => $value) {
+        if ($value === '') {
+            delete_term_meta($term_id, $meta_key);
+        } else {
+            update_term_meta($term_id, $meta_key, $value);
+        }
+    }
+}
+add_action('created_service_category', 'itstudio_save_service_category_meta');
+add_action('edited_service_category', 'itstudio_save_service_category_meta');
+
+function itstudio_get_service_target_url($service_id) {
+    $service_id = (int) $service_id;
+    if ($service_id <= 0) {
+        return '';
+    }
+
+    $meta_key = itstudio_get_service_url_meta_key();
+    $url = (string) get_post_meta($service_id, $meta_key, true);
+    if ($url !== '') {
+        return $url;
+    }
+
+    return (string) get_permalink($service_id);
+}
+
+function itstudio_service_admin_columns($columns) {
+    $columns['service_category'] = __('分类', 'itstudio');
+    $columns['service_url'] = __('跳转链接', 'itstudio');
+    return $columns;
+}
+add_filter('manage_service_posts_columns', 'itstudio_service_admin_columns');
+
+function itstudio_service_admin_custom_column($column, $post_id) {
+    if ($column === 'service_category') {
+        $terms = get_the_terms($post_id, 'service_category');
+        if (empty($terms) || is_wp_error($terms)) {
+            echo '<span style="color:#888;">' . esc_html__('未分类', 'itstudio') . '</span>';
+            return;
+        }
+
+        $labels = array();
+        foreach ($terms as $term) {
+            $i18n = itstudio_get_service_category_i18n_labels($term);
+            $label = $i18n['cn'];
+            if ($i18n['en'] !== $i18n['cn']) {
+                $label .= ' / ' . $i18n['en'];
+            }
+            $labels[] = $label;
+        }
+
+        echo esc_html(implode(' | ', $labels));
+        return;
+    }
+
+    if ($column === 'service_url') {
+        $url = itstudio_get_service_target_url($post_id);
+        if ($url === '') {
+            echo '<span style="color:#888;">-</span>';
+            return;
+        }
+
+        echo '<a href="' . esc_url($url) . '" target="_blank" rel="noopener noreferrer">' . esc_html($url) . '</a>';
+    }
+}
+add_action('manage_service_posts_custom_column', 'itstudio_service_admin_custom_column', 10, 2);
 
 function itstudio_archive_document_title($parts) {
     if (is_post_type_archive('announcement')) {
@@ -368,6 +789,57 @@ function itstudio_news_fallback() {
     }
 }
 add_action('template_redirect', 'itstudio_news_fallback');
+
+// Fallback: render /services even if the page isn't created in WP admin.
+function itstudio_services_fallback() {
+    if (!is_404()) {
+        return;
+    }
+
+    global $wp;
+    $request = isset($wp->request) ? trim($wp->request, '/') : '';
+    if ($request !== 'services') {
+        return;
+    }
+
+    $template = locate_template('page-services.php');
+    if ($template) {
+        global $wp_query;
+        if ($wp_query) {
+            $wp_query->is_404 = false;
+            $wp_query->is_page = true;
+            $wp_query->is_singular = true;
+            $virtual_post = new WP_Post((object) array(
+                'ID' => 0,
+                'post_type' => 'page',
+                'post_parent' => 0,
+                'post_title' => __('便民服务', 'itstudio'),
+                'post_status' => 'publish',
+                'post_name' => 'services',
+                'post_content' => '',
+            ));
+            $wp_query->post = $virtual_post;
+            $wp_query->posts = array($virtual_post);
+            $wp_query->queried_object = $virtual_post;
+            $wp_query->queried_object_id = 0;
+            $wp_query->post_count = 1;
+            $wp_query->found_posts = 1;
+            $wp_query->max_num_pages = 1;
+            global $post;
+            $post = $virtual_post;
+            setup_postdata($post);
+        }
+        add_filter('document_title_parts', function ($parts) {
+            $parts['title'] = __('便民服务', 'itstudio');
+            return $parts;
+        });
+        status_header(200);
+        nocache_headers();
+        include $template;
+        exit;
+    }
+}
+add_action('template_redirect', 'itstudio_services_fallback');
 
 function itstudio_get_post_views($post_id) {
     $post_id = (int) $post_id;
