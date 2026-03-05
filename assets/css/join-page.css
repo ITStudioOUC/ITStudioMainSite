@@ -1,0 +1,475 @@
+.join-page {
+  padding: 36px 0 72px;
+}
+
+.join-head {
+  margin-bottom: 26px;
+}
+
+.join-title {
+  margin: 0;
+  font-size: clamp(2.1rem, 1.9vw + 1.3rem, 3.2rem);
+  line-height: 1.08;
+  color: var(--color-primary);
+}
+
+.join-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 34px;
+}
+
+.join-canvas-shell {
+  position: relative;
+  border: 1px solid var(--border-default);
+  border-radius: 18px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  box-shadow: var(--shadow-sm);
+}
+
+.join-stage-photo-frame {
+  position: relative;
+  overflow: hidden;
+}
+
+.join-stage-photo {
+  width: 100%;
+  height: clamp(220px, 28vw, 360px);
+  object-fit: cover;
+  display: block;
+}
+
+.join-wave-layer {
+  position: relative;
+  margin-top: clamp(-20px, -2.4vw, -12px);
+  z-index: 1;
+}
+
+.join-progress-canvas {
+  display: block;
+  width: 100%;
+  height: clamp(56px, 5.8vw, 82px);
+}
+
+.join-wave-progress {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.join-wave-track {
+  position: relative;
+  position: absolute;
+  left: clamp(18px, 2.2vw, 30px);
+  right: clamp(18px, 2.2vw, 30px);
+  top: 68%;
+  height: 4px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: color-mix(in srgb, var(--text-secondary) 26%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-default) 60%, transparent);
+}
+
+.join-wave-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-primary) 56%, transparent) 0%,
+    color-mix(in srgb, var(--color-primary) 82%, #7ed7ff 18%) 100%
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.join-wave-marks {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.join-wave-mark {
+  --mark-wave-offset: 0px;
+  --mark-tilt: 0deg;
+  position: absolute;
+  top: 50%;
+  width: clamp(20px, 1.9vw, 27px);
+  transform: translate(-50%, calc(-58% + var(--mark-wave-offset))) rotate(var(--mark-tilt));
+  transform-origin: 50% 78%;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, #00142b 50%, transparent));
+  will-change: transform;
+}
+
+.join-wave-mark.is-lighthouse {
+  width: clamp(22px, 2vw, 30px);
+  transform: translate(-50%, -80%);
+  transform-origin: 50% 96%;
+}
+
+.join-wave-mark.is-active {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-primary) 36%, transparent));
+}
+
+.join-wave-mark-icon {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 50% 80%;
+  will-change: transform, opacity;
+}
+
+.join-wave-mark svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.join-wave-mark .marker-buoy-ring {
+  fill: color-mix(in srgb, #5fa0df 72%, #8ec8ff 28%);
+}
+
+.join-wave-mark .marker-buoy-base {
+  fill: color-mix(in srgb, #fbfdff 92%, #d5e9ff 8%);
+}
+
+.join-wave-mark .marker-buoy-stripe {
+  fill: color-mix(in srgb, #f6814c 70%, #ec4d44 30%);
+}
+
+.join-wave-mark .marker-buoy-cap {
+  fill: color-mix(in srgb, #29497d 74%, #1c2e57 26%);
+}
+
+.join-wave-mark .marker-buoy-light {
+  fill: color-mix(in srgb, #ffe083 72%, #ffc74a 28%);
+}
+
+.join-wave-mark .marker-buoy-gloss {
+  fill: color-mix(in srgb, #ffffff 88%, transparent);
+}
+
+.join-wave-mark .marker-lh-base {
+  fill: color-mix(in srgb, var(--color-primary) 70%, #0d2e62 30%);
+}
+
+.join-wave-mark .marker-lh-tower {
+  fill: color-mix(in srgb, #f6fbff 88%, var(--color-primary) 12%);
+}
+
+.join-wave-mark .marker-lh-top {
+  fill: color-mix(in srgb, #d44545 72%, #a52f2f 28%);
+}
+
+.join-wave-mark .marker-lh-beam {
+  fill: color-mix(in srgb, #ffef9f 64%, transparent);
+  opacity: 0.28;
+}
+
+.join-wave-mark .marker-reef-rock {
+  fill: color-mix(in srgb, #365a7f 72%, #2a4868 28%);
+}
+
+.join-wave-mark .marker-reef-highlight {
+  fill: color-mix(in srgb, #5f82a6 64%, #486a8e 36%);
+}
+
+.join-wave-boat {
+  --boat-wave-offset: 0px;
+  --boat-tilt: 0deg;
+  --boat-waterline-adjust: -4px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: clamp(42px, 4.4vw, 58px);
+  transform: translate(-50%, calc(-62% + var(--boat-waterline-adjust) + var(--boat-wave-offset))) rotate(var(--boat-tilt));
+  color: color-mix(in srgb, var(--color-primary) 78%, #8ed5ff 22%);
+  filter: drop-shadow(0 3px 8px color-mix(in srgb, #00132f 60%, transparent));
+  will-change: transform, left;
+}
+
+.join-wave-boat-icon {
+  display: block;
+  transform-origin: 50% 60%;
+}
+
+.join-wave-boat svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.join-wave-boat .boat-hull {
+  fill: color-mix(in srgb, var(--color-primary) 64%, #102e5f 36%);
+}
+
+.join-wave-boat .boat-sail-main {
+  fill: color-mix(in srgb, #f2f9ff 90%, var(--color-primary) 10%);
+}
+
+.join-wave-boat .boat-sail-side {
+  fill: color-mix(in srgb, #cbe6ff 80%, var(--color-primary) 20%);
+}
+
+.join-wave-boat .boat-mast {
+  fill: color-mix(in srgb, var(--text-primary) 75%, #294b7a 25%);
+}
+
+.join-wave-boat .boat-porthole {
+  fill: color-mix(in srgb, #eef6ff 85%, var(--color-primary) 15%);
+}
+
+.join-canvas-overlay {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 2;
+  max-width: 540px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-default) 72%, transparent);
+  background: color-mix(in srgb, var(--bg-body) 68%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.join-current-label {
+  margin: 0;
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.join-current-stage {
+  margin: 4px 0 0;
+  font-size: clamp(1.2rem, 0.9vw + 1rem, 1.7rem);
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.join-current-range {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.join-stage-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.join-stage-item {
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-card) 95%, transparent);
+  padding: 10px 11px;
+  min-height: 98px;
+}
+
+.join-stage-item.is-current {
+  border-color: color-mix(in srgb, var(--color-primary) 52%, var(--border-default) 48%);
+  box-shadow: var(--shadow-sm);
+}
+
+.join-stage-item.is-completed .join-stage-status {
+  color: #0f8a4f;
+}
+
+.join-stage-item.is-active .join-stage-status {
+  color: var(--color-primary);
+}
+
+.join-stage-item.is-upcoming .join-stage-status,
+.join-stage-item.is-pending .join-stage-status {
+  color: var(--text-secondary);
+}
+
+.join-stage-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 8px;
+  row-gap: 4px;
+}
+
+.join-stage-name {
+  margin: 0;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.94rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.join-stage-status {
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.join-stage-time {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.join-forms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.join-form-card {
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-card) 95%, transparent);
+  padding: 18px;
+}
+
+.join-form-card-full {
+  grid-column: 1 / -1;
+}
+
+.join-form-head h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.22rem;
+}
+
+.join-form-head p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.join-form-content {
+  margin-top: 14px;
+}
+
+.join-form-content form {
+  margin: 0;
+}
+
+.join-form-content .frm_forms {
+  margin: 0;
+}
+
+.join-form-content .frm_style_formidable-style.with_frm_style .frm_form_fields,
+.join-form-content .frm_style_formidable-style.with_frm_style .frm_submit {
+  max-width: none;
+}
+
+.join-form-content .frm_style_formidable-style.with_frm_style input[type="text"],
+.join-form-content .frm_style_formidable-style.with_frm_style input[type="email"],
+.join-form-content .frm_style_formidable-style.with_frm_style input[type="number"],
+.join-form-content .frm_style_formidable-style.with_frm_style input[type="tel"],
+.join-form-content .frm_style_formidable-style.with_frm_style input[type="date"],
+.join-form-content .frm_style_formidable-style.with_frm_style input[type="datetime-local"],
+.join-form-content .frm_style_formidable-style.with_frm_style textarea,
+.join-form-content .frm_style_formidable-style.with_frm_style select {
+  background: color-mix(in srgb, var(--bg-body) 90%, transparent);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.join-form-content .frm_style_formidable-style.with_frm_style input[type="submit"],
+.join-form-content .frm_style_formidable-style.with_frm_style button.frm_button_submit {
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 62%, var(--border-default) 38%);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+}
+
+.join-form-tip {
+  margin: 0;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-default);
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.join-form-footnote {
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1080px) {
+  .join-stage-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .join-page {
+    padding: 30px 0 60px;
+  }
+
+  .join-stage-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .join-forms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .join-form-card-full {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .join-head {
+    margin-bottom: 22px;
+  }
+
+  .join-hero {
+    margin-bottom: 24px;
+  }
+
+  .join-canvas-overlay {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    padding: 10px 11px;
+  }
+
+  .join-stage-photo {
+    height: 230px;
+  }
+
+  .join-current-stage {
+    margin-top: 2px;
+    font-size: 1.1rem;
+  }
+
+  .join-current-range {
+    margin-top: 5px;
+    font-size: 0.82rem;
+  }
+
+  .join-stage-list {
+    grid-template-columns: 1fr;
+  }
+
+  .join-stage-item {
+    min-height: 0;
+  }
+}

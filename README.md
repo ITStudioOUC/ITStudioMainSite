@@ -213,3 +213,69 @@ MIT License - 详见 LICENSE 文件
 - ✅ 响应式设计完成
 - ✅ 主题切换功能
 - ✅ 自定义文章类型（公告）
+
+---
+
+## 加入我们页面（/join）使用说明
+
+主题已内置「加入我们」页面模板（`page-join.php`），并支持在没有创建 WordPress 页面时通过 `/join` 自动 fallback 渲染。
+
+### 1. 需要安装的插件
+
+1. **Formidable Forms**  
+用于报名表单、进度查询表单、公示视图（可选使用 Formidable Views）。
+2. **WP Mail SMTP**  
+用于 Formidable 提交邮件发送（站点邮件走 SMTP）。
+
+### 2. 后台时间节点设置
+
+进入：**设置 > 招新设置**
+
+可配置字段：
+- 报名开始时间（datetime）
+- 报名结束时间（datetime）
+- 第一次面试日期（date）
+- 第二次面试日期（date）
+- 录取公示开始日期（date，系统自动延续 7 天）
+- 报名表单 Shortcode
+- 结果查询 Shortcode
+- 公示视图 Shortcode
+
+说明：
+- 「国庆能力摸底阶段」固定为每年 **10/01 - 10/07**。
+- 年份优先取报名开始时间年份；若未设置，则取公示开始年份；仍未设置则取当前年份。
+
+### 3. 前台显示逻辑
+
+- 报名表单：仅在报名阶段显示。
+- 结果查询表单：从报名开始到公示结束前可用。
+- 公示视图：仅在公示 7 天窗口内显示。
+- Canvas 进度条：根据当前时间自动高亮阶段（已完成/进行中/未开始）。
+
+### 4. Formidable 推荐配置方式
+
+1. 新建报名表单，复制 shortcode，填入「报名表单 Shortcode」。
+2. 新建结果查询表单（例如：学号/邮箱/手机号 + 状态查询逻辑），填入「结果查询 Shortcode」。
+3. 如需公示名单展示，创建 Formidable View，复制 shortcode，填入「公示视图 Shortcode」。
+
+### 5. WP Mail SMTP 配置建议
+
+1. 安装并启用 **WP Mail SMTP**。
+2. 在插件中填写 SMTP 服务信息（Host、Port、加密方式、账号密码）。
+3. 设置发件人邮箱与发件人名称。
+4. 使用插件自带发送测试邮件，确认可达后再开放报名。
+
+## Join Page Quick Guide (ASCII)
+
+- Admin path: Settings -> Recruitment Settings.
+- Configure timeline nodes: registration start/end, interview I date, interview II date, notice start date.
+- Stage "National Day Assessment" is fixed to Oct 1 - Oct 7 (auto year).
+- Set Formidable shortcodes:
+  - registration form shortcode
+  - progress lookup shortcode
+  - public notice view shortcode
+- Frontend visibility rules:
+  - registration form: only in registration window
+  - lookup form: from registration start until notice window ends
+  - public notice view: only during 7-day notice window
+- Mail delivery: configure WP Mail SMTP plugin for Formidable emails.

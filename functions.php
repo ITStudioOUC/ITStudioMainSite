@@ -1104,3 +1104,829 @@ function itstudio_track_post_views() {
     update_post_meta($post_id, 'itstudio_views', $views);
 }
 add_action('template_redirect', 'itstudio_track_post_views', 20);
+
+function itstudio_is_join_page_context() {
+    $is_join = is_page('join') || is_page_template('page-join.php');
+    if (!$is_join && is_404()) {
+        global $wp;
+        $request = isset($wp->request) ? trim((string) $wp->request, '/') : '';
+        $is_join = ($request === 'join');
+    }
+
+    return $is_join;
+}
+
+function itstudio_join_get_default_settings() {
+    return array(
+        'registration_start' => '',
+        'registration_end' => '',
+        'first_interview_date' => '',
+        'second_interview_date' => '',
+        'notice_start_date' => '',
+        'photo_registration' => 0,
+        'photo_first_interview' => 0,
+        'photo_assessment' => 0,
+        'photo_second_interview' => 0,
+        'photo_public_notice' => 0,
+        'photo_inactive' => 0,
+        'signup_form_shortcode' => '',
+        'query_form_shortcode' => '',
+        'notice_view_shortcode' => '',
+    );
+}
+
+function itstudio_join_get_photo_field_map() {
+    return array(
+        'registration' => 'photo_registration',
+        'first_interview' => 'photo_first_interview',
+        'assessment' => 'photo_assessment',
+        'second_interview' => 'photo_second_interview',
+        'public_notice' => 'photo_public_notice',
+        'inactive' => 'photo_inactive',
+    );
+}
+
+function itstudio_join_sanitize_datetime_local_value($value) {
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    $value = preg_replace('/\s+/', 'T', $value);
+
+    // 兼容旧数据：仅日期
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        return $value;
+    }
+
+    // 兼容输入：YYYY-MM-DDTHH:MM 或 YYYY-MM-DDTHH:MM:SS
+    if (preg_match('/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(:\d{2})?$/', $value, $matches)) {
+        return $matches[1] . 'T' . $matches[2];
+    }
+
+    return '';
+}
+
+function itstudio_join_sanitize_date_value($value) {
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        return '';
+    }
+
+    return $value;
+}
+
+function itstudio_join_sanitize_shortcode_value($value) {
+    if (!is_string($value)) {
+        return '';
+    }
+
+    return trim(sanitize_text_field(wp_unslash($value)));
+}
+
+function itstudio_join_sanitize_settings($input) {
+    $defaults = itstudio_join_get_default_settings();
+    $input = is_array($input) ? $input : array();
+
+    $sanitized = array(
+        'registration_start' => itstudio_join_sanitize_datetime_local_value($input['registration_start'] ?? ''),
+        'registration_end' => itstudio_join_sanitize_datetime_local_value($input['registration_end'] ?? ''),
+        'first_interview_date' => itstudio_join_sanitize_date_value($input['first_interview_date'] ?? ''),
+        'second_interview_date' => itstudio_join_sanitize_date_value($input['second_interview_date'] ?? ''),
+        'notice_start_date' => itstudio_join_sanitize_date_value($input['notice_start_date'] ?? ''),
+        'signup_form_shortcode' => itstudio_join_sanitize_shortcode_value($input['signup_form_shortcode'] ?? ''),
+        'query_form_shortcode' => itstudio_join_sanitize_shortcode_value($input['query_form_shortcode'] ?? ''),
+        'notice_view_shortcode' => itstudio_join_sanitize_shortcode_value($input['notice_view_shortcode'] ?? ''),
+    );
+
+    foreach (itstudio_join_get_photo_field_map() as $field_key) {
+        $sanitized[$field_key] = isset($input[$field_key]) ? absint($input[$field_key]) : 0;
+    }
+
+    return array_merge($defaults, $sanitized);
+}
+
+function itstudio_join_get_settings() {
+    $defaults = itstudio_join_get_default_settings();
+    $stored = get_option('itstudio_join_settings', array());
+    if (!is_array($stored)) {
+        return $defaults;
+    }
+
+    return array_merge($defaults, itstudio_join_sanitize_settings($stored));
+}
+
+function itstudio_join_parse_datetime_local($value, $date_only_as_end_of_day = false) {
+    $value = itstudio_join_sanitize_datetime_local_value($value);
+    if ($value === '') {
+        return null;
+    }
+
+    $timezone = wp_timezone();
+    $format = 'Y-m-d\TH:i';
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        $format = 'Y-m-d';
+    }
+
+    $parsed = DateTimeImmutable::createFromFormat('!' . $format, $value, $timezone);
+    $errors = DateTimeImmutable::getLastErrors();
+    if (!($parsed instanceof DateTimeImmutable)) {
+        return null;
+    }
+
+    if (is_array($errors) && (($errors['warning_count'] ?? 0) > 0 || ($errors['error_count'] ?? 0) > 0)) {
+        return null;
+    }
+
+    if ($format === 'Y-m-d') {
+        return $date_only_as_end_of_day
+            ? $parsed->setTime(23, 59, 59)
+            : $parsed->setTime(0, 0, 0);
+    }
+
+    return $parsed;
+}
+
+function itstudio_join_parse_date($value) {
+    $value = itstudio_join_sanitize_date_value($value);
+    if ($value === '') {
+        return null;
+    }
+
+    $timezone = wp_timezone();
+    $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value, $timezone);
+    $errors = DateTimeImmutable::getLastErrors();
+    if (!($parsed instanceof DateTimeImmutable)) {
+        return null;
+    }
+
+    if (is_array($errors) && (($errors['warning_count'] ?? 0) > 0 || ($errors['error_count'] ?? 0) > 0)) {
+        return null;
+    }
+
+    return $parsed;
+}
+
+function itstudio_join_datetime_to_ms($date) {
+    if (!($date instanceof DateTimeImmutable)) {
+        return null;
+    }
+
+    return (int) $date->format('U') * 1000;
+}
+
+function itstudio_join_resolve_stage_status($now, $start, $end) {
+    if (!($now instanceof DateTimeImmutable)) {
+        return 'pending';
+    }
+
+    if (!($start instanceof DateTimeImmutable) && !($end instanceof DateTimeImmutable)) {
+        return 'pending';
+    }
+
+    if ($start instanceof DateTimeImmutable && $now < $start) {
+        return 'upcoming';
+    }
+
+    if ($start instanceof DateTimeImmutable && $end instanceof DateTimeImmutable) {
+        if ($now >= $start && $now <= $end) {
+            return 'active';
+        }
+        if ($now > $end) {
+            return 'completed';
+        }
+    }
+
+    if ($start instanceof DateTimeImmutable && !($end instanceof DateTimeImmutable)) {
+        if ($now >= $start) {
+            return 'active';
+        }
+    }
+
+    if (!($start instanceof DateTimeImmutable) && $end instanceof DateTimeImmutable) {
+        return $now <= $end ? 'active' : 'completed';
+    }
+
+    return 'upcoming';
+}
+
+function itstudio_join_is_in_window($now, $start, $end) {
+    if (!($now instanceof DateTimeImmutable) || !($start instanceof DateTimeImmutable)) {
+        return false;
+    }
+
+    if ($now < $start) {
+        return false;
+    }
+
+    if ($end instanceof DateTimeImmutable && $now > $end) {
+        return false;
+    }
+
+    return true;
+}
+
+function itstudio_join_format_stage_range($start, $end, $all_day = false) {
+    if (!($start instanceof DateTimeImmutable) && !($end instanceof DateTimeImmutable)) {
+        return array(
+            'cn' => '时间待定',
+            'en' => 'Schedule TBA',
+        );
+    }
+
+    $format_cn_day = 'Y.m.d';
+    $format_cn_full = 'Y.m.d H:i';
+    $format_en_day = 'M j, Y';
+    $format_en_full = 'M j, Y H:i';
+
+    if ($start instanceof DateTimeImmutable && !($end instanceof DateTimeImmutable)) {
+        return array(
+            'cn' => $all_day ? $start->format($format_cn_day) : $start->format($format_cn_full),
+            'en' => $all_day ? $start->format($format_en_day) : $start->format($format_en_full),
+        );
+    }
+
+    if (!($start instanceof DateTimeImmutable) && $end instanceof DateTimeImmutable) {
+        return array(
+            'cn' => $all_day ? $end->format($format_cn_day) : $end->format($format_cn_full),
+            'en' => $all_day ? $end->format($format_en_day) : $end->format($format_en_full),
+        );
+    }
+
+    if (!($start instanceof DateTimeImmutable) || !($end instanceof DateTimeImmutable)) {
+        return array(
+            'cn' => '时间待定',
+            'en' => 'Schedule TBA',
+        );
+    }
+
+    $start_cn = $all_day ? $start->format($format_cn_day) : $start->format($format_cn_full);
+    $end_cn = $all_day ? $end->format($format_cn_day) : $end->format($format_cn_full);
+    $start_en = $all_day ? $start->format($format_en_day) : $start->format($format_en_full);
+    $end_en = $all_day ? $end->format($format_en_day) : $end->format($format_en_full);
+
+    if ($start_cn === $end_cn) {
+        return array(
+            'cn' => $start_cn,
+            'en' => $start_en,
+        );
+    }
+
+    return array(
+        'cn' => $start_cn . ' - ' . $end_cn,
+        'en' => $start_en . ' - ' . $end_en,
+    );
+}
+
+function itstudio_join_get_stage_photo_url($settings, $stage_key) {
+    $settings = is_array($settings) ? $settings : array();
+    $field_map = itstudio_join_get_photo_field_map();
+    $field_key = isset($field_map[$stage_key]) ? $field_map[$stage_key] : '';
+
+    $attachment_id = 0;
+    if ($field_key !== '' && isset($settings[$field_key])) {
+        $attachment_id = absint($settings[$field_key]);
+    }
+
+    if ($attachment_id > 0) {
+        $photo_url = wp_get_attachment_image_url($attachment_id, 'full');
+        if (is_string($photo_url) && $photo_url !== '') {
+            return $photo_url;
+        }
+    }
+
+    return '';
+}
+
+function itstudio_join_get_runtime_data() {
+    static $cached = null;
+    if (is_array($cached)) {
+        return $cached;
+    }
+
+    $settings = itstudio_join_get_settings();
+    $timezone = wp_timezone();
+    $now = new DateTimeImmutable('now', $timezone);
+
+    $registration_start = itstudio_join_parse_datetime_local($settings['registration_start'], false);
+    $registration_end = itstudio_join_parse_datetime_local($settings['registration_end'], true);
+    if ($registration_start instanceof DateTimeImmutable) {
+        $registration_start = $registration_start->setTime(0, 0, 0);
+    }
+    if ($registration_end instanceof DateTimeImmutable) {
+        $registration_end = $registration_end->setTime(23, 59, 59);
+    }
+    if ($registration_start instanceof DateTimeImmutable && $registration_end instanceof DateTimeImmutable && $registration_end < $registration_start) {
+        $registration_end = $registration_start;
+    }
+
+    $first_interview_day = itstudio_join_parse_date($settings['first_interview_date']);
+    $first_interview_start = $first_interview_day instanceof DateTimeImmutable ? $first_interview_day->setTime(0, 0, 0) : null;
+    $first_interview_end = $first_interview_day instanceof DateTimeImmutable ? $first_interview_day->setTime(23, 59, 59) : null;
+
+    $second_interview_day = itstudio_join_parse_date($settings['second_interview_date']);
+    $second_interview_start = $second_interview_day instanceof DateTimeImmutable ? $second_interview_day->setTime(0, 0, 0) : null;
+    $second_interview_end = $second_interview_day instanceof DateTimeImmutable ? $second_interview_day->setTime(23, 59, 59) : null;
+
+    $notice_start_day = itstudio_join_parse_date($settings['notice_start_date']);
+    $notice_start = $notice_start_day instanceof DateTimeImmutable ? $notice_start_day->setTime(0, 0, 0) : null;
+    $notice_end = $notice_start instanceof DateTimeImmutable ? $notice_start->modify('+6 days')->setTime(23, 59, 59) : null;
+
+    $recruitment_year = null;
+    if ($registration_start instanceof DateTimeImmutable) {
+        $recruitment_year = (int) $registration_start->format('Y');
+    } elseif ($notice_start instanceof DateTimeImmutable) {
+        $recruitment_year = (int) $notice_start->format('Y');
+    } else {
+        $recruitment_year = (int) $now->format('Y');
+    }
+
+    $assessment_start = DateTimeImmutable::createFromFormat('!Y-m-d', sprintf('%04d-10-01', $recruitment_year), $timezone);
+    $assessment_end_base = DateTimeImmutable::createFromFormat('!Y-m-d', sprintf('%04d-10-07', $recruitment_year), $timezone);
+    $assessment_end = $assessment_end_base instanceof DateTimeImmutable ? $assessment_end_base->setTime(23, 59, 59) : null;
+
+    $stage_seed = array(
+        array(
+            'key' => 'registration',
+            'label_cn' => '报名阶段',
+            'label_en' => 'Registration',
+            'short_cn' => '报名',
+            'short_en' => 'Reg',
+            'start' => $registration_start,
+            'end' => $registration_end,
+            'all_day' => true,
+        ),
+        array(
+            'key' => 'first_interview',
+            'label_cn' => '第一次面试',
+            'label_en' => 'Interview I',
+            'short_cn' => '一面',
+            'short_en' => 'I-1',
+            'start' => $first_interview_start,
+            'end' => $first_interview_end,
+            'all_day' => true,
+        ),
+        array(
+            'key' => 'assessment',
+            'label_cn' => '国庆能力摸底',
+            'label_en' => 'Assessment',
+            'short_cn' => '摸底',
+            'short_en' => 'Assess',
+            'start' => $assessment_start,
+            'end' => $assessment_end,
+            'all_day' => true,
+        ),
+        array(
+            'key' => 'second_interview',
+            'label_cn' => '第二次面试',
+            'label_en' => 'Interview II',
+            'short_cn' => '二面',
+            'short_en' => 'I-2',
+            'start' => $second_interview_start,
+            'end' => $second_interview_end,
+            'all_day' => true,
+        ),
+        array(
+            'key' => 'public_notice',
+            'label_cn' => '录取结果公示',
+            'label_en' => 'Public Notice',
+            'short_cn' => '公示',
+            'short_en' => 'Notice',
+            'start' => $notice_start,
+            'end' => $notice_end,
+            'all_day' => true,
+        ),
+    );
+
+    $stages = array();
+    foreach ($stage_seed as $stage) {
+        $range = itstudio_join_format_stage_range($stage['start'], $stage['end'], !empty($stage['all_day']));
+        $status = itstudio_join_resolve_stage_status($now, $stage['start'], $stage['end']);
+        $stages[] = array(
+            'key' => $stage['key'],
+            'label_cn' => $stage['label_cn'],
+            'label_en' => $stage['label_en'],
+            'short_cn' => $stage['short_cn'],
+            'short_en' => $stage['short_en'],
+            'status' => $status,
+            'range_cn' => $range['cn'],
+            'range_en' => $range['en'],
+            'start_ts' => itstudio_join_datetime_to_ms($stage['start']),
+            'end_ts' => itstudio_join_datetime_to_ms($stage['end']),
+        );
+    }
+
+    $current_stage_index = -1;
+    foreach ($stages as $index => $stage) {
+        if ($stage['status'] === 'active') {
+            $current_stage_index = (int) $index;
+            break;
+        }
+    }
+
+    $current_stage = ($current_stage_index >= 0 && isset($stages[$current_stage_index]))
+        ? $stages[$current_stage_index]
+        : array(
+            'key' => 'inactive',
+            'label_cn' => '当前未在招新时段',
+            'label_en' => 'Recruitment is currently closed',
+            'short_cn' => '',
+            'short_en' => '',
+            'status' => 'inactive',
+            'range_cn' => '请关注后续通知',
+            'range_en' => 'Please check later updates',
+            'start_ts' => null,
+            'end_ts' => null,
+        );
+
+    $is_registration_open = itstudio_join_is_in_window($now, $registration_start, $registration_end);
+
+    $is_query_open = false;
+    if ($registration_start instanceof DateTimeImmutable) {
+        if ($notice_end instanceof DateTimeImmutable) {
+            $is_query_open = itstudio_join_is_in_window($now, $registration_start, $notice_end);
+        } else {
+            $is_query_open = ($now >= $registration_start);
+        }
+    }
+
+    $is_notice_open = itstudio_join_is_in_window($now, $notice_start, $notice_end);
+    $current_stage_photo_url = itstudio_join_get_stage_photo_url($settings, (string) ($current_stage['key'] ?? ''));
+    if ($current_stage_photo_url === '') {
+        $current_stage_photo_url = get_template_directory_uri() . '/resources/it_logo_2024.svg';
+    }
+
+    $cached = array(
+        'settings' => $settings,
+        'timezone' => $timezone->getName(),
+        'recruitment_year' => $recruitment_year,
+        'now_ts' => (int) $now->format('U') * 1000,
+        'stages' => $stages,
+        'current_stage_index' => $current_stage_index,
+        'current_stage' => $current_stage,
+        'is_registration_open' => $is_registration_open,
+        'is_query_open' => $is_query_open,
+        'is_notice_open' => $is_notice_open,
+        'current_stage_photo_url' => $current_stage_photo_url,
+        'query_deadline_cn' => $notice_end instanceof DateTimeImmutable ? $notice_end->format('Y-m-d H:i') : '',
+        'query_deadline_en' => $notice_end instanceof DateTimeImmutable ? $notice_end->format('M j, Y H:i') : '',
+    );
+
+    return $cached;
+}
+
+function itstudio_join_get_frontend_payload() {
+    $runtime = itstudio_join_get_runtime_data();
+    return array(
+        'nowTs' => (int) ($runtime['now_ts'] ?? 0),
+        'currentStageIndex' => (int) ($runtime['current_stage_index'] ?? -1),
+        'stages' => array_values(array_map(static function ($stage) {
+            return array(
+                'key' => (string) ($stage['key'] ?? ''),
+                'labelCn' => (string) ($stage['label_cn'] ?? ''),
+                'labelEn' => (string) ($stage['label_en'] ?? ''),
+                'shortCn' => (string) ($stage['short_cn'] ?? ''),
+                'shortEn' => (string) ($stage['short_en'] ?? ''),
+                'status' => (string) ($stage['status'] ?? 'pending'),
+                'rangeCn' => (string) ($stage['range_cn'] ?? ''),
+                'rangeEn' => (string) ($stage['range_en'] ?? ''),
+                'startTs' => isset($stage['start_ts']) ? $stage['start_ts'] : null,
+                'endTs' => isset($stage['end_ts']) ? $stage['end_ts'] : null,
+            );
+        }, (array) ($runtime['stages'] ?? array()))),
+    );
+}
+
+function itstudio_join_enqueue_assets() {
+    if (!itstudio_is_join_page_context()) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'itstudio-join-page',
+        get_template_directory_uri() . '/assets/css/join-page.css',
+        array('itstudio-content'),
+        '1.1.0'
+    );
+
+    wp_enqueue_script(
+        'itstudio-animejs',
+        get_template_directory_uri() . '/assets/js/vendor/anime.min.js',
+        array(),
+        '3.2.2',
+        true
+    );
+
+    wp_enqueue_script(
+        'itstudio-join-canvas',
+        get_template_directory_uri() . '/assets/js/join-canvas.js',
+        array('itstudio-animejs'),
+        '1.1.0',
+        true
+    );
+
+    wp_localize_script('itstudio-join-canvas', 'itstudioJoinData', itstudio_join_get_frontend_payload());
+}
+add_action('wp_enqueue_scripts', 'itstudio_join_enqueue_assets', 30);
+
+function itstudio_join_register_settings() {
+    register_setting(
+        'itstudio_join_settings_group',
+        'itstudio_join_settings',
+        array(
+            'type' => 'array',
+            'sanitize_callback' => 'itstudio_join_sanitize_settings',
+            'default' => itstudio_join_get_default_settings(),
+        )
+    );
+}
+add_action('admin_init', 'itstudio_join_register_settings');
+
+function itstudio_join_register_settings_page() {
+    add_options_page(
+        '招新设置',
+        '招新设置',
+        'manage_options',
+        'itstudio-join-settings',
+        'itstudio_join_render_settings_page'
+    );
+}
+add_action('admin_menu', 'itstudio_join_register_settings_page');
+
+function itstudio_join_render_photo_field_row($field_key, $label, $settings) {
+    $attachment_id = isset($settings[$field_key]) ? absint($settings[$field_key]) : 0;
+    $preview_url = $attachment_id > 0 ? wp_get_attachment_image_url($attachment_id, 'medium_large') : '';
+    ?>
+    <tr>
+        <th scope="row"><label><?php echo esc_html($label); ?></label></th>
+        <td>
+            <input type="hidden" class="itstudio-join-photo-id" name="itstudio_join_settings[<?php echo esc_attr($field_key); ?>]" value="<?php echo esc_attr($attachment_id); ?>">
+            <div class="itstudio-join-photo-preview-wrap" style="margin-bottom:10px;">
+                <img class="itstudio-join-photo-preview" src="<?php echo esc_url($preview_url); ?>" alt="" style="max-width:300px;height:auto;border:1px solid #dcdcde;border-radius:8px;display:<?php echo $preview_url !== '' ? 'block' : 'none'; ?>;">
+            </div>
+            <button type="button" class="button itstudio-join-photo-upload"><?php esc_html_e('上传 / 选择图片', 'itstudio'); ?></button>
+            <button type="button" class="button-link-delete itstudio-join-photo-clear" style="margin-left:8px;<?php echo $preview_url !== '' ? '' : 'display:none;'; ?>"><?php esc_html_e('移除', 'itstudio'); ?></button>
+        </td>
+    </tr>
+    <?php
+}
+
+function itstudio_join_render_settings_page() {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    wp_enqueue_media();
+
+    $settings = itstudio_join_get_settings();
+    $runtime = itstudio_join_get_runtime_data();
+    $formidable_active = shortcode_exists('formidable') || class_exists('FrmFormsController');
+    $smtp_active = class_exists('\WPMailSMTP\WP') || defined('WPMS_PLUGIN_VER');
+    ?>
+    <div class="wrap">
+        <h1>爱特工作室招新设置</h1>
+        <p>用于配置「加入我们」页面的时间节点、表单和公示视图。</p>
+
+        <?php if (!$formidable_active) : ?>
+            <div class="notice notice-warning inline">
+                <p><strong>提示：</strong>未检测到 Formidable Forms 插件。报名表单、查询表单、公示视图将无法在前台渲染。</p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!$smtp_active) : ?>
+            <div class="notice notice-warning inline">
+                <p><strong>提示：</strong>未检测到 WP Mail SMTP 插件。建议启用后再开放报名邮件通知。</p>
+            </div>
+        <?php endif; ?>
+
+        <form method="post" action="options.php">
+            <?php settings_fields('itstudio_join_settings_group'); ?>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row"><label for="itstudio_join_registration_start">报名开始时间</label></th>
+                    <td>
+                        <input type="datetime-local" id="itstudio_join_registration_start" name="itstudio_join_settings[registration_start]" value="<?php echo esc_attr((string) $settings['registration_start']); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_registration_end">报名结束时间</label></th>
+                    <td>
+                        <input type="datetime-local" id="itstudio_join_registration_end" name="itstudio_join_settings[registration_end]" value="<?php echo esc_attr((string) $settings['registration_end']); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_first_interview_date">第一次面试日期</label></th>
+                    <td>
+                        <input type="date" id="itstudio_join_first_interview_date" name="itstudio_join_settings[first_interview_date]" value="<?php echo esc_attr((string) $settings['first_interview_date']); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_second_interview_date">第二次面试日期</label></th>
+                    <td>
+                        <input type="date" id="itstudio_join_second_interview_date" name="itstudio_join_settings[second_interview_date]" value="<?php echo esc_attr((string) $settings['second_interview_date']); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_notice_start_date">录取公示开始日期</label></th>
+                    <td>
+                        <input type="date" id="itstudio_join_notice_start_date" name="itstudio_join_settings[notice_start_date]" value="<?php echo esc_attr((string) $settings['notice_start_date']); ?>" class="regular-text">
+                        <p class="description">公示会自动持续 7 天（开始日 + 后续 6 天）。</p>
+                    </td>
+                </tr>
+                <?php itstudio_join_render_photo_field_row('photo_registration', '报名阶段图片', $settings); ?>
+                <?php itstudio_join_render_photo_field_row('photo_first_interview', '第一次面试图片', $settings); ?>
+                <?php itstudio_join_render_photo_field_row('photo_assessment', '国庆能力摸底图片', $settings); ?>
+                <?php itstudio_join_render_photo_field_row('photo_second_interview', '第二次面试图片', $settings); ?>
+                <?php itstudio_join_render_photo_field_row('photo_public_notice', '录取公示阶段图片', $settings); ?>
+                <?php itstudio_join_render_photo_field_row('photo_inactive', '非招新时段图片', $settings); ?>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_signup_shortcode">报名表单 Shortcode</label></th>
+                    <td>
+                        <input type="text" id="itstudio_join_signup_shortcode" name="itstudio_join_settings[signup_form_shortcode]" value="<?php echo esc_attr((string) $settings['signup_form_shortcode']); ?>" class="regular-text code">
+                        <p class="description">示例：<code>[formidable id="12"]</code></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_query_shortcode">结果查询 Shortcode</label></th>
+                    <td>
+                        <input type="text" id="itstudio_join_query_shortcode" name="itstudio_join_settings[query_form_shortcode]" value="<?php echo esc_attr((string) $settings['query_form_shortcode']); ?>" class="regular-text code">
+                        <p class="description">示例：<code>[formidable id="13"]</code></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_notice_shortcode">公示视图 Shortcode</label></th>
+                    <td>
+                        <input type="text" id="itstudio_join_notice_shortcode" name="itstudio_join_settings[notice_view_shortcode]" value="<?php echo esc_attr((string) $settings['notice_view_shortcode']); ?>" class="regular-text code">
+                        <p class="description">示例：<code>[display-frm-data id="5"]</code></p>
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button('保存设置'); ?>
+        </form>
+
+        <hr>
+        <h2>阶段预览</h2>
+        <p>国庆能力摸底阶段固定为每年 10 月 1 日至 10 月 7 日，年份自动取报名开始年份（未配置则取公示开始年份，再否则取当前年份）。</p>
+        <table class="widefat striped">
+            <thead>
+                <tr>
+                    <th>阶段</th>
+                    <th>时间</th>
+                    <th>状态</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ((array) ($runtime['stages'] ?? array()) as $stage) : ?>
+                    <?php
+                    $status = (string) ($stage['status'] ?? 'pending');
+                    $status_label = '待设置';
+                    if ($status === 'completed') {
+                        $status_label = '已完成';
+                    } elseif ($status === 'active') {
+                        $status_label = '进行中';
+                    } elseif ($status === 'upcoming') {
+                        $status_label = '未开始';
+                    }
+                    ?>
+                    <tr>
+                        <td><?php echo esc_html((string) ($stage['label_cn'] ?? '')); ?></td>
+                        <td><?php echo esc_html((string) ($stage['range_cn'] ?? '')); ?></td>
+                        <td><?php echo esc_html($status_label); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <script>
+            (function () {
+                const uploadButtons = document.querySelectorAll('.itstudio-join-photo-upload');
+                if (!uploadButtons.length) {
+                    return;
+                }
+
+                uploadButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        if (!window.wp || !wp.media) {
+                            return;
+                        }
+
+                        const row = button.closest('td');
+                        if (!row) {
+                            return;
+                        }
+
+                        const input = row.querySelector('.itstudio-join-photo-id');
+                        const preview = row.querySelector('.itstudio-join-photo-preview');
+                        const clearBtn = row.querySelector('.itstudio-join-photo-clear');
+                        if (!input || !preview) {
+                            return;
+                        }
+
+                        const frame = wp.media({
+                            title: '选择阶段图片',
+                            button: { text: '使用此图片' },
+                            multiple: false,
+                            library: { type: 'image' },
+                        });
+
+                        frame.on('select', () => {
+                            const selection = frame.state().get('selection').first();
+                            if (!selection) {
+                                return;
+                            }
+                            const data = selection.toJSON();
+                            const imageUrl = (data.sizes && data.sizes.medium_large && data.sizes.medium_large.url)
+                                ? data.sizes.medium_large.url
+                                : data.url;
+                            input.value = data.id || '';
+                            preview.src = imageUrl || '';
+                            preview.style.display = imageUrl ? 'block' : 'none';
+                            if (clearBtn) {
+                                clearBtn.style.display = imageUrl ? 'inline' : 'none';
+                            }
+                        });
+
+                        frame.open();
+                    });
+                });
+
+                document.querySelectorAll('.itstudio-join-photo-clear').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const row = button.closest('td');
+                        if (!row) {
+                            return;
+                        }
+                        const input = row.querySelector('.itstudio-join-photo-id');
+                        const preview = row.querySelector('.itstudio-join-photo-preview');
+                        if (input) {
+                            input.value = '';
+                        }
+                        if (preview) {
+                            preview.src = '';
+                            preview.style.display = 'none';
+                        }
+                        button.style.display = 'none';
+                    });
+                });
+            })();
+        </script>
+    </div>
+    <?php
+}
+
+function itstudio_join_fallback() {
+    if (!is_404()) {
+        return;
+    }
+
+    global $wp;
+    $request = isset($wp->request) ? trim((string) $wp->request, '/') : '';
+    if ($request !== 'join') {
+        return;
+    }
+
+    $template = locate_template('page-join.php');
+    if (!$template) {
+        return;
+    }
+
+    global $wp_query;
+    if ($wp_query) {
+        $wp_query->is_404 = false;
+        $wp_query->is_page = true;
+        $wp_query->is_singular = true;
+        $virtual_post = new WP_Post((object) array(
+            'ID' => 0,
+            'post_type' => 'page',
+            'post_parent' => 0,
+            'post_title' => '加入我们',
+            'post_status' => 'publish',
+            'post_name' => 'join',
+            'post_content' => '',
+        ));
+        $wp_query->post = $virtual_post;
+        $wp_query->posts = array($virtual_post);
+        $wp_query->queried_object = $virtual_post;
+        $wp_query->queried_object_id = 0;
+        $wp_query->post_count = 1;
+        $wp_query->found_posts = 1;
+        $wp_query->max_num_pages = 1;
+        global $post;
+        $post = $virtual_post;
+        setup_postdata($post);
+    }
+
+    add_filter('document_title_parts', static function ($parts) {
+        $parts['title'] = '加入我们';
+        return $parts;
+    });
+
+    status_header(200);
+    nocache_headers();
+    include $template;
+    exit;
+}
+add_action('template_redirect', 'itstudio_join_fallback', 9);
