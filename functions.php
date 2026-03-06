@@ -1401,6 +1401,21 @@ function itstudio_join_get_default_settings() {
         'assessment_start_date' => '',
         'assessment_end_date' => '',
         'notice_start_date' => '',
+        'result_data_source' => 'file',
+        'result_formidable_form_id' => '',
+        'result_formidable_name_field' => '',
+        'result_formidable_qq_field' => '',
+        'result_formidable_email_field' => '',
+        'result_formidable_student_id_field' => '',
+        'result_formidable_registration_field' => '',
+        'result_formidable_first_interview_field' => '',
+        'result_formidable_assessment_field' => '',
+        'result_formidable_second_interview_field' => '',
+        'result_formidable_admission_field' => '',
+        'result_first_interview_file' => 0,
+        'result_assessment_file' => 0,
+        'result_second_interview_file' => 0,
+        'result_admission_file' => 0,
         'result_registration_records' => '',
         'result_first_interview_records' => '',
         'result_assessment_records' => '',
@@ -1507,6 +1522,22 @@ function itstudio_join_sanitize_settings($input) {
         'assessment_start_date' => itstudio_join_sanitize_date_value($input['assessment_start_date'] ?? ''),
         'assessment_end_date' => itstudio_join_sanitize_date_value($input['assessment_end_date'] ?? ''),
         'notice_start_date' => itstudio_join_sanitize_date_value($input['notice_start_date'] ?? ''),
+        // 固定使用文件结果模式，避免后台再配置字段映射。
+        'result_data_source' => 'file',
+        'result_formidable_form_id' => itstudio_join_sanitize_shortcode_value($input['result_formidable_form_id'] ?? ''),
+        'result_formidable_name_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_name_field'] ?? ''),
+        'result_formidable_qq_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_qq_field'] ?? ''),
+        'result_formidable_email_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_email_field'] ?? ''),
+        'result_formidable_student_id_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_student_id_field'] ?? ''),
+        'result_formidable_registration_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_registration_field'] ?? ''),
+        'result_formidable_first_interview_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_first_interview_field'] ?? ''),
+        'result_formidable_assessment_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_assessment_field'] ?? ''),
+        'result_formidable_second_interview_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_second_interview_field'] ?? ''),
+        'result_formidable_admission_field' => itstudio_join_sanitize_shortcode_value($input['result_formidable_admission_field'] ?? ''),
+        'result_first_interview_file' => isset($input['result_first_interview_file']) ? absint($input['result_first_interview_file']) : 0,
+        'result_assessment_file' => isset($input['result_assessment_file']) ? absint($input['result_assessment_file']) : 0,
+        'result_second_interview_file' => isset($input['result_second_interview_file']) ? absint($input['result_second_interview_file']) : 0,
+        'result_admission_file' => isset($input['result_admission_file']) ? absint($input['result_admission_file']) : 0,
         'result_registration_records' => itstudio_join_sanitize_records_value($input['result_registration_records'] ?? ''),
         'result_first_interview_records' => itstudio_join_sanitize_records_value($input['result_first_interview_records'] ?? ''),
         'result_assessment_records' => itstudio_join_sanitize_records_value($input['result_assessment_records'] ?? ''),
@@ -1606,8 +1637,626 @@ function itstudio_join_get_result_field_map() {
     );
 }
 
+function itstudio_join_get_result_file_field_map() {
+    return array(
+        'first_interview' => 'result_first_interview_file',
+        'assessment' => 'result_assessment_file',
+        'second_interview' => 'result_second_interview_file',
+        'public_notice' => 'result_admission_file',
+    );
+}
+
+function itstudio_join_is_file_result_mode($settings) {
+    $settings = is_array($settings) ? $settings : array();
+    return (($settings['result_data_source'] ?? 'manual') === 'file');
+}
+
+function itstudio_join_get_result_file_attachment_id($settings, $stage_key) {
+    $settings = is_array($settings) ? $settings : array();
+    $map = itstudio_join_get_result_file_field_map();
+    $setting_key = isset($map[$stage_key]) ? $map[$stage_key] : '';
+    if ($setting_key === '') {
+        return 0;
+    }
+    return absint((string) ($settings[$setting_key] ?? ''));
+}
+
+function itstudio_join_csv_delimiter_for_line($line) {
+    $line = (string) $line;
+    $candidates = array(',', ';', "\t", '|');
+    $best = ',';
+    $best_count = -1;
+    foreach ($candidates as $delimiter) {
+        $count = substr_count($line, $delimiter);
+        if ($count > $best_count) {
+            $best_count = $count;
+            $best = $delimiter;
+        }
+    }
+    return $best;
+}
+
+function itstudio_join_read_csv_rows($path) {
+    if (!is_string($path) || $path === '' || !is_readable($path)) {
+        return array();
+    }
+
+    $rows = array();
+    $handle = fopen($path, 'rb');
+    if ($handle === false) {
+        return array();
+    }
+
+    $delimiter = ',';
+    $first_line = fgets($handle);
+    if ($first_line !== false) {
+        $first_line = preg_replace('/^\xEF\xBB\xBF/', '', (string) $first_line);
+        $delimiter = itstudio_join_csv_delimiter_for_line($first_line);
+        rewind($handle);
+    }
+
+    while (($data = fgetcsv($handle, 0, $delimiter)) !== false) {
+        if (!is_array($data)) {
+            continue;
+        }
+        $row = array();
+        foreach ($data as $cell) {
+            $row[] = trim((string) $cell);
+        }
+        if (!empty(array_filter($row, static function ($value) {
+            return $value !== '';
+        }))) {
+            $rows[] = $row;
+        }
+    }
+
+    fclose($handle);
+    return $rows;
+}
+
+function itstudio_join_xlsx_column_to_index($column_ref) {
+    $column_ref = strtoupper((string) $column_ref);
+    $length = strlen($column_ref);
+    $index = 0;
+    for ($i = 0; $i < $length; $i++) {
+        $ch = ord($column_ref[$i]);
+        if ($ch < 65 || $ch > 90) {
+            continue;
+        }
+        $index = ($index * 26) + ($ch - 64);
+    }
+    return max(0, $index - 1);
+}
+
+function itstudio_join_xlsx_shared_strings($zip) {
+    $shared = array();
+    $xml = $zip->getFromName('xl/sharedStrings.xml');
+    if (!is_string($xml) || trim($xml) === '') {
+        return $shared;
+    }
+
+    $sx = simplexml_load_string($xml);
+    if (!($sx instanceof SimpleXMLElement)) {
+        return $shared;
+    }
+
+    foreach ($sx->si as $si) {
+        if (isset($si->t)) {
+            $shared[] = (string) $si->t;
+            continue;
+        }
+        $chunks = array();
+        if (isset($si->r)) {
+            foreach ($si->r as $run) {
+                $chunks[] = (string) $run->t;
+            }
+        }
+        $shared[] = implode('', $chunks);
+    }
+
+    return $shared;
+}
+
+function itstudio_join_read_xlsx_rows($path) {
+    if (!class_exists('ZipArchive') || !class_exists('SimpleXMLElement')) {
+        return array();
+    }
+    if (!is_string($path) || $path === '' || !is_readable($path)) {
+        return array();
+    }
+
+    $zip = new ZipArchive();
+    if ($zip->open($path) !== true) {
+        return array();
+    }
+
+    $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+    if (!is_string($sheetXml) || trim($sheetXml) === '') {
+        // fallback: first worksheet found
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if (is_string($name) && preg_match('#^xl/worksheets/sheet\d+\.xml$#', $name)) {
+                $sheetXml = $zip->getFromName($name);
+                break;
+            }
+        }
+    }
+
+    if (!is_string($sheetXml) || trim($sheetXml) === '') {
+        $zip->close();
+        return array();
+    }
+
+    $sharedStrings = itstudio_join_xlsx_shared_strings($zip);
+    $zip->close();
+
+    $sheet = simplexml_load_string($sheetXml);
+    if (!($sheet instanceof SimpleXMLElement) || !isset($sheet->sheetData)) {
+        return array();
+    }
+
+    $rows = array();
+    foreach ($sheet->sheetData->row as $rowNode) {
+        $row = array();
+        foreach ($rowNode->c as $cell) {
+            $ref = (string) ($cell['r'] ?? '');
+            $type = (string) ($cell['t'] ?? '');
+            preg_match('/^[A-Z]+/i', $ref, $matches);
+            $colRef = isset($matches[0]) ? $matches[0] : '';
+            $colIndex = itstudio_join_xlsx_column_to_index($colRef);
+
+            $value = '';
+            if ($type === 's') {
+                $sharedIndex = isset($cell->v) ? (int) $cell->v : -1;
+                $value = ($sharedIndex >= 0 && isset($sharedStrings[$sharedIndex])) ? (string) $sharedStrings[$sharedIndex] : '';
+            } elseif ($type === 'inlineStr' && isset($cell->is->t)) {
+                $value = (string) $cell->is->t;
+            } else {
+                $value = isset($cell->v) ? (string) $cell->v : '';
+            }
+
+            $row[$colIndex] = trim($value);
+        }
+
+        if (!empty($row)) {
+            ksort($row);
+            $normalized = array_values($row);
+            if (!empty(array_filter($normalized, static function ($value) {
+                return $value !== '';
+            }))) {
+                $rows[] = $normalized;
+            }
+        }
+    }
+
+    return $rows;
+}
+
+function itstudio_join_read_result_rows_from_attachment($attachment_id) {
+    static $cache = array();
+    $attachment_id = absint($attachment_id);
+    if ($attachment_id <= 0) {
+        return array();
+    }
+    if (isset($cache[$attachment_id])) {
+        return $cache[$attachment_id];
+    }
+
+    $path = get_attached_file($attachment_id);
+    if (!is_string($path) || $path === '' || !is_readable($path)) {
+        $cache[$attachment_id] = array();
+        return array();
+    }
+
+    $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+    $rows = array();
+    if ($ext === 'csv') {
+        $rows = itstudio_join_read_csv_rows($path);
+    } elseif ($ext === 'xlsx') {
+        $rows = itstudio_join_read_xlsx_rows($path);
+    } else {
+        // try csv as fallback
+        $rows = itstudio_join_read_csv_rows($path);
+    }
+
+    $cache[$attachment_id] = is_array($rows) ? $rows : array();
+    return $cache[$attachment_id];
+}
+
+function itstudio_join_parse_result_rows_to_records($rows) {
+    $rows = is_array($rows) ? $rows : array();
+    $records = array();
+
+    $is_header_row = static function ($name, $qq, $email, $student_id, $phone, $passed_raw) {
+        $joined = implode(',', array($name, $qq, $email, $student_id, $phone, $passed_raw));
+        $joined = preg_replace('/^\xEF\xBB\xBF/', '', (string) $joined);
+        $joined = preg_replace('/\s+/u', '', (string) $joined);
+        $joined_lower = function_exists('mb_strtolower') ? mb_strtolower($joined, 'UTF-8') : strtolower($joined);
+
+        $is_cn_header = (
+            strpos($joined_lower, '姓名') !== false
+            || strpos($joined_lower, 'qq') !== false
+            || strpos($joined_lower, '邮箱') !== false
+            || strpos($joined_lower, '学号') !== false
+            || strpos($joined_lower, '手机') !== false
+            || strpos($joined_lower, '是否通过') !== false
+        );
+
+        $is_en_header = (
+            strpos($joined_lower, 'name') !== false
+            || strpos($joined_lower, 'qq') !== false
+            || strpos($joined_lower, 'email') !== false
+            || strpos($joined_lower, 'student') !== false
+            || strpos($joined_lower, 'phone') !== false
+            || strpos($joined_lower, 'pass') !== false
+        );
+
+        return $is_cn_header || $is_en_header;
+    };
+
+    foreach ($rows as $idx => $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $name = trim((string) ($row[0] ?? ''));
+        $qq = trim((string) ($row[1] ?? ''));
+        $email = trim((string) ($row[2] ?? ''));
+        $student_id = trim((string) ($row[3] ?? ''));
+        $phone = trim((string) ($row[4] ?? ''));
+        $passed_raw = trim((string) ($row[5] ?? ''));
+
+        // 过滤标题行（支持中英文标题）
+        if ($idx === 0 && $is_header_row($name, $qq, $email, $student_id, $phone, $passed_raw)) {
+            continue;
+        }
+        // 容错：有些表格会在中间重复表头
+        if ($is_header_row($name, $qq, $email, $student_id, $phone, $passed_raw)) {
+            continue;
+        }
+
+        $record = array(
+            'name' => itstudio_join_normalize_lookup_value('name', $name),
+            'qq' => itstudio_join_normalize_lookup_value('qq', $qq),
+            'email' => itstudio_join_normalize_lookup_value('email', $email),
+            'student_id' => itstudio_join_normalize_lookup_value('student_id', $student_id),
+            'phone' => preg_replace('/\D+/', '', $phone),
+            'passed' => ($passed_raw === '1'),
+        );
+
+        if ($record['name'] === '' && $record['qq'] === '' && $record['email'] === '' && $record['student_id'] === '' && $record['phone'] === '') {
+            continue;
+        }
+
+        $records[] = $record;
+    }
+
+    return $records;
+}
+
+function itstudio_join_is_formidable_result_mode($settings) {
+    $settings = is_array($settings) ? $settings : array();
+    return (($settings['result_data_source'] ?? 'manual') === 'formidable');
+}
+
+function itstudio_join_get_formidable_form_id($settings) {
+    $settings = is_array($settings) ? $settings : array();
+    return absint((string) ($settings['result_formidable_form_id'] ?? ''));
+}
+
+function itstudio_join_get_formidable_identity_field_refs($settings) {
+    $settings = is_array($settings) ? $settings : array();
+    return array(
+        'name' => trim((string) ($settings['result_formidable_name_field'] ?? '')),
+        'qq' => trim((string) ($settings['result_formidable_qq_field'] ?? '')),
+        'email' => trim((string) ($settings['result_formidable_email_field'] ?? '')),
+        'student_id' => trim((string) ($settings['result_formidable_student_id_field'] ?? '')),
+    );
+}
+
+function itstudio_join_get_formidable_stage_field_ref($settings, $stage_key) {
+    $settings = is_array($settings) ? $settings : array();
+    $map = array(
+        'registration' => 'result_formidable_registration_field',
+        'first_interview' => 'result_formidable_first_interview_field',
+        'assessment' => 'result_formidable_assessment_field',
+        'second_interview' => 'result_formidable_second_interview_field',
+        'public_notice' => 'result_formidable_admission_field',
+    );
+    $setting_key = isset($map[$stage_key]) ? $map[$stage_key] : '';
+    if ($setting_key === '') {
+        return '';
+    }
+    return trim((string) ($settings[$setting_key] ?? ''));
+}
+
+function itstudio_join_resolve_formidable_field_id($form_id, $field_ref) {
+    static $cache = array();
+    $form_id = absint($form_id);
+    $field_ref = trim((string) $field_ref);
+    if ($field_ref === '') {
+        return 0;
+    }
+
+    $cache_key = $form_id . '|' . $field_ref;
+    if (isset($cache[$cache_key])) {
+        return (int) $cache[$cache_key];
+    }
+
+    if (ctype_digit($field_ref)) {
+        $cache[$cache_key] = (int) $field_ref;
+        return (int) $cache[$cache_key];
+    }
+
+    $field_id = 0;
+    if (class_exists('FrmField') && method_exists('FrmField', 'get_id_by_key')) {
+        $field_id = (int) FrmField::get_id_by_key($field_ref);
+    }
+
+    if ($field_id <= 0) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'frm_fields';
+        if ($form_id > 0) {
+            $field_id = (int) $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE field_key = %s AND form_id = %d LIMIT 1", $field_ref, $form_id));
+        } else {
+            $field_id = (int) $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE field_key = %s LIMIT 1", $field_ref));
+        }
+    }
+
+    $cache[$cache_key] = $field_id > 0 ? $field_id : 0;
+    return (int) $cache[$cache_key];
+}
+
+function itstudio_join_get_formidable_entry_meta_value($entry_id, $field_id) {
+    static $cache = array();
+    $entry_id = absint($entry_id);
+    $field_id = absint($field_id);
+    if ($entry_id <= 0 || $field_id <= 0) {
+        return '';
+    }
+
+    $cache_key = $entry_id . '|' . $field_id;
+    if (array_key_exists($cache_key, $cache)) {
+        return $cache[$cache_key];
+    }
+
+    $value = '';
+    if (class_exists('FrmEntryMeta') && method_exists('FrmEntryMeta', 'get_entry_meta_by_field')) {
+        $value = FrmEntryMeta::get_entry_meta_by_field($entry_id, $field_id, true);
+    } else {
+        global $wpdb;
+        $table = $wpdb->prefix . 'frm_item_metas';
+        $value = $wpdb->get_var($wpdb->prepare("SELECT meta_value FROM {$table} WHERE item_id = %d AND field_id = %d LIMIT 1", $entry_id, $field_id));
+    }
+
+    $cache[$cache_key] = $value;
+    return $value;
+}
+
+function itstudio_join_is_truthy_result_value($value) {
+    if (is_array($value)) {
+        foreach ($value as $item) {
+            if (itstudio_join_is_truthy_result_value($item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    if (is_bool($value)) {
+        return $value;
+    }
+
+    if (is_numeric($value)) {
+        return ((float) $value) > 0;
+    }
+
+    $value = trim((string) $value);
+    if ($value === '') {
+        return false;
+    }
+
+    if (is_serialized($value)) {
+        $decoded = maybe_unserialize($value);
+        if ($decoded !== $value) {
+            return itstudio_join_is_truthy_result_value($decoded);
+        }
+    }
+
+    $normalized = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+    return in_array($normalized, array(
+        '1', 'true', 'yes', 'on', 'y',
+        'pass', 'passed', 'admit', 'admitted',
+        '是', '通过', '已通过', '录取', '已录取', '完成', '成功',
+    ), true);
+}
+
+function itstudio_join_find_formidable_entry_id_by_query($settings, $query) {
+    $settings = is_array($settings) ? $settings : array();
+    $query = is_array($query) ? $query : array();
+    if (!class_exists('FrmEntry') || !class_exists('FrmEntryMeta')) {
+        return 0;
+    }
+
+    $form_id = itstudio_join_get_formidable_form_id($settings);
+    if ($form_id <= 0) {
+        return 0;
+    }
+
+    $identity_refs = itstudio_join_get_formidable_identity_field_refs($settings);
+    $active_filters = array();
+    foreach (array('name', 'qq', 'email', 'student_id') as $field) {
+        $query_value = trim((string) ($query[$field] ?? ''));
+        if ($query_value === '') {
+            continue;
+        }
+        $field_ref = trim((string) ($identity_refs[$field] ?? ''));
+        if ($field_ref === '') {
+            continue;
+        }
+        $field_id = itstudio_join_resolve_formidable_field_id($form_id, $field_ref);
+        if ($field_id <= 0) {
+            continue;
+        }
+        $active_filters[$field] = $field_id;
+    }
+
+    if (empty($active_filters)) {
+        return 0;
+    }
+
+    $entries = FrmEntry::getAll(
+        array(
+            'it.form_id' => $form_id,
+            'is_draft' => 0,
+        ),
+        ' ORDER BY it.id DESC'
+    );
+
+    if (empty($entries)) {
+        return 0;
+    }
+
+    foreach ($entries as $entry) {
+        $entry_id = absint(is_object($entry) ? ($entry->id ?? 0) : (is_array($entry) ? ($entry['id'] ?? 0) : 0));
+        if ($entry_id <= 0) {
+            continue;
+        }
+
+        $matched = true;
+        foreach ($active_filters as $field => $field_id) {
+            $raw_value = itstudio_join_get_formidable_entry_meta_value($entry_id, $field_id);
+            $normalized_entry_value = itstudio_join_normalize_lookup_value($field, (string) $raw_value);
+            $normalized_query_value = itstudio_join_normalize_lookup_value($field, (string) ($query[$field] ?? ''));
+            if ($normalized_query_value === '' || $normalized_entry_value === '' || $normalized_entry_value !== $normalized_query_value) {
+                $matched = false;
+                break;
+            }
+        }
+
+        if ($matched) {
+            return $entry_id;
+        }
+    }
+
+    return 0;
+}
+
+function itstudio_join_formidable_entry_matches_stage($settings, $entry_id, $stage_key) {
+    $settings = is_array($settings) ? $settings : array();
+    $entry_id = absint($entry_id);
+    $stage_key = (string) $stage_key;
+    if ($entry_id <= 0) {
+        return false;
+    }
+
+    $form_id = itstudio_join_get_formidable_form_id($settings);
+    if ($form_id <= 0) {
+        return false;
+    }
+
+    $field_ref = itstudio_join_get_formidable_stage_field_ref($settings, $stage_key);
+    if ($field_ref === '') {
+        return $stage_key === 'registration';
+    }
+
+    $field_id = itstudio_join_resolve_formidable_field_id($form_id, $field_ref);
+    if ($field_id <= 0) {
+        return false;
+    }
+
+    $raw_value = itstudio_join_get_formidable_entry_meta_value($entry_id, $field_id);
+    return itstudio_join_is_truthy_result_value($raw_value);
+}
+
+function itstudio_join_formidable_stage_has_data($settings, $stage_key) {
+    $settings = is_array($settings) ? $settings : array();
+    if (!class_exists('FrmEntry') || !class_exists('FrmEntryMeta')) {
+        return false;
+    }
+
+    $form_id = itstudio_join_get_formidable_form_id($settings);
+    if ($form_id <= 0) {
+        return false;
+    }
+
+    global $wpdb;
+    $items_table = $wpdb->prefix . 'frm_items';
+    $metas_table = $wpdb->prefix . 'frm_item_metas';
+
+    $entry_count = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(1) FROM {$items_table} WHERE form_id = %d AND is_draft = 0", $form_id));
+    if ($entry_count <= 0) {
+        return false;
+    }
+
+    if ($stage_key === 'registration') {
+        return true;
+    }
+
+    $field_ref = itstudio_join_get_formidable_stage_field_ref($settings, $stage_key);
+    $field_id = itstudio_join_resolve_formidable_field_id($form_id, $field_ref);
+    if ($field_id <= 0) {
+        return false;
+    }
+
+    $hit = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(1)
+         FROM {$metas_table} AS m
+         INNER JOIN {$items_table} AS i ON i.id = m.item_id
+         WHERE i.form_id = %d
+           AND i.is_draft = 0
+           AND m.field_id = %d
+           AND COALESCE(m.meta_value, '') <> ''",
+        $form_id,
+        $field_id
+    ));
+
+    return $hit > 0 || $entry_count > 0;
+}
+
+function itstudio_join_formidable_has_queryable_identity_field($settings, $query) {
+    $settings = is_array($settings) ? $settings : array();
+    $query = is_array($query) ? $query : array();
+    $form_id = itstudio_join_get_formidable_form_id($settings);
+    if ($form_id <= 0) {
+        return false;
+    }
+
+    $identity_refs = itstudio_join_get_formidable_identity_field_refs($settings);
+    foreach (array('name', 'qq', 'email', 'student_id') as $field) {
+        $query_value = trim((string) ($query[$field] ?? ''));
+        if ($query_value === '') {
+            continue;
+        }
+        $field_ref = trim((string) ($identity_refs[$field] ?? ''));
+        if ($field_ref === '') {
+            continue;
+        }
+        $field_id = itstudio_join_resolve_formidable_field_id($form_id, $field_ref);
+        if ($field_id > 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function itstudio_join_has_uploaded_result_for_stage($settings, $stage_key) {
     $settings = is_array($settings) ? $settings : array();
+    if (itstudio_join_is_file_result_mode($settings)) {
+        $attachment_id = itstudio_join_get_result_file_attachment_id($settings, $stage_key);
+        if ($attachment_id <= 0) {
+            return false;
+        }
+        $rows = itstudio_join_read_result_rows_from_attachment($attachment_id);
+        $records = itstudio_join_parse_result_rows_to_records($rows);
+        return !empty($records);
+    }
+
+    if (itstudio_join_is_formidable_result_mode($settings)) {
+        return itstudio_join_formidable_stage_has_data($settings, $stage_key);
+    }
+
     $field_map = itstudio_join_get_result_field_map();
     $field_key = isset($field_map[$stage_key]) ? $field_map[$stage_key] : '';
     if ($field_key === '') {
@@ -1734,6 +2383,40 @@ function itstudio_join_record_matches_query($record, $query) {
 
 function itstudio_join_find_record_in_stage_results($settings, $stage_key, $query) {
     $settings = is_array($settings) ? $settings : array();
+    if (itstudio_join_is_file_result_mode($settings)) {
+        $attachment_id = itstudio_join_get_result_file_attachment_id($settings, $stage_key);
+        if ($attachment_id <= 0) {
+            return false;
+        }
+        $rows = itstudio_join_read_result_rows_from_attachment($attachment_id);
+        $records = itstudio_join_parse_result_rows_to_records($rows);
+        if (empty($records)) {
+            return false;
+        }
+        foreach ($records as $record) {
+            if (itstudio_join_record_matches_query($record, $query) && !empty($record['passed'])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    if (itstudio_join_is_formidable_result_mode($settings)) {
+        static $entry_cache = array();
+        $cache_key = md5(wp_json_encode(array(
+            'form_id' => itstudio_join_get_formidable_form_id($settings),
+            'query' => $query,
+        )));
+        if (!isset($entry_cache[$cache_key])) {
+            $entry_cache[$cache_key] = itstudio_join_find_formidable_entry_id_by_query($settings, $query);
+        }
+        $entry_id = (int) $entry_cache[$cache_key];
+        if ($entry_id <= 0) {
+            return false;
+        }
+        return itstudio_join_formidable_entry_matches_stage($settings, $entry_id, $stage_key);
+    }
+
     $field_map = itstudio_join_get_result_field_map();
     $field_key = isset($field_map[$stage_key]) ? $field_map[$stage_key] : '';
     if ($field_key === '') {
@@ -1829,31 +2512,21 @@ function itstudio_join_resolve_progress_lookup($runtime = array(), $request_sour
     $status_second = itstudio_join_get_stage_status_by_key($runtime, 'second_interview');
     $status_notice = itstudio_join_get_stage_status_by_key($runtime, 'public_notice');
 
-    $uploaded_registration = itstudio_join_has_uploaded_result_for_stage($settings, 'registration');
     $uploaded_first = itstudio_join_has_uploaded_result_for_stage($settings, 'first_interview');
     $uploaded_assessment = itstudio_join_has_uploaded_result_for_stage($settings, 'assessment');
     $uploaded_second = itstudio_join_has_uploaded_result_for_stage($settings, 'second_interview');
     $uploaded_notice = itstudio_join_has_uploaded_result_for_stage($settings, 'public_notice');
 
-    if (!$uploaded_registration) {
-        $response['message_cn'] = '报名数据尚未上传，暂无法查询。';
-        $response['message_en'] = 'Registration data has not been uploaded yet.';
-        $response['tone'] = 'warning';
-        return $response;
-    }
-
-    $is_registered = itstudio_join_find_record_in_stage_results($settings, 'registration', $query);
-    if (!$is_registered) {
-        $response['message_cn'] = '未报名。';
-        $response['message_en'] = 'Not registered.';
-        $response['tone'] = 'error';
-        return $response;
-    }
-
-    if ($status_registration === 'active' || $status_registration === 'upcoming' || $status_first === 'upcoming' || $status_first === 'pending') {
-        $response['message_cn'] = '已报名。';
-        $response['message_en'] = 'Registered.';
+    if ($status_registration === 'active' || $status_registration === 'upcoming') {
+        $response['message_cn'] = '报名阶段暂不开放进度查询。';
+        $response['message_en'] = 'Progress lookup is not available during registration stage.';
         $response['tone'] = 'success';
+        return $response;
+    }
+    if ($status_first === 'upcoming' || $status_first === 'pending' || $status_first === 'active') {
+        $response['message_cn'] = '当前暂不可查询，请等待第一次面试结束后查看结果。';
+        $response['message_en'] = 'Lookup is not available yet. Please wait until Interview I results are published.';
+        $response['tone'] = 'warning';
         return $response;
     }
 
@@ -2208,7 +2881,7 @@ function itstudio_join_get_runtime_data() {
             'all_day' => true,
             'location_cn' => '',
             'location_en' => '',
-            'result_uploaded' => itstudio_join_has_uploaded_result_for_stage($settings, 'registration'),
+            'result_uploaded' => false,
         ),
         array(
             'key' => 'first_interview',
@@ -2334,15 +3007,22 @@ function itstudio_join_get_runtime_data() {
     $is_registration_open = itstudio_join_is_in_window($now, $registration_start, $registration_end);
 
     $is_query_open = false;
-    if ($registration_start instanceof DateTimeImmutable) {
+    $query_start = null;
+    if ($registration_end instanceof DateTimeImmutable) {
+        $query_start = $registration_end->modify('+1 second');
+    } elseif ($first_interview_start instanceof DateTimeImmutable) {
+        $query_start = $first_interview_start;
+    }
+    if ($query_start instanceof DateTimeImmutable) {
         if ($notice_end instanceof DateTimeImmutable) {
-            $is_query_open = itstudio_join_is_in_window($now, $registration_start, $notice_end);
+            $is_query_open = itstudio_join_is_in_window($now, $query_start, $notice_end);
         } else {
-            $is_query_open = ($now >= $registration_start);
+            $is_query_open = ($now >= $query_start);
         }
     }
 
     $is_notice_open = itstudio_join_is_in_window($now, $notice_start, $notice_end);
+    $is_notice_finished = ($notice_end instanceof DateTimeImmutable) && ($now > $notice_end);
     $current_stage_photo_url = itstudio_join_get_stage_photo_url($settings, (string) ($current_stage['key'] ?? ''));
     if ($current_stage_photo_url === '') {
         $current_stage_photo_url = get_template_directory_uri() . '/resources/it_logo_2024.svg';
@@ -2390,6 +3070,7 @@ function itstudio_join_get_runtime_data() {
         'is_registration_open' => $is_registration_open,
         'is_query_open' => $is_query_open,
         'is_notice_open' => $is_notice_open,
+        'is_notice_finished' => $is_notice_finished,
         'show_progress_visual' => $show_progress_visual,
         'current_stage_photo_url' => $current_stage_photo_url,
         'query_deadline_cn' => $notice_end instanceof DateTimeImmutable ? $notice_end->format('Y-m-d H:i') : '',
@@ -2469,6 +3150,15 @@ function itstudio_join_register_settings() {
 }
 add_action('admin_init', 'itstudio_join_register_settings');
 
+function itstudio_join_allow_result_file_mimes($mimes) {
+    $mimes = is_array($mimes) ? $mimes : array();
+    // 允许在媒体库上传招新结果文件。
+    $mimes['csv'] = 'text/csv';
+    $mimes['xlsx'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    return $mimes;
+}
+add_filter('upload_mimes', 'itstudio_join_allow_result_file_mimes');
+
 function itstudio_join_register_settings_page() {
     add_options_page(
         '招新设置',
@@ -2515,6 +3205,52 @@ function itstudio_join_render_result_records_row($field_key, $label, $settings, 
                 <p class="description"><?php echo esc_html($description); ?></p>
             <?php else : ?>
                 <p class="description">每行一条记录，格式：姓名,QQ,邮箱,学号。可用逗号、中文逗号、竖线或 Tab 分隔。</p>
+            <?php endif; ?>
+        </td>
+    </tr>
+    <?php
+}
+
+function itstudio_join_render_text_setting_row($field_key, $label, $settings, $description = '', $placeholder = '') {
+    $value = isset($settings[$field_key]) ? (string) $settings[$field_key] : '';
+    ?>
+    <tr>
+        <th scope="row"><label for="<?php echo esc_attr('itstudio_join_' . $field_key); ?>"><?php echo esc_html($label); ?></label></th>
+        <td>
+            <input
+                type="text"
+                id="<?php echo esc_attr('itstudio_join_' . $field_key); ?>"
+                name="itstudio_join_settings[<?php echo esc_attr($field_key); ?>]"
+                value="<?php echo esc_attr($value); ?>"
+                class="regular-text code"
+                <?php if ($placeholder !== '') : ?>placeholder="<?php echo esc_attr($placeholder); ?>"<?php endif; ?>
+            >
+            <?php if ($description !== '') : ?>
+                <p class="description"><?php echo esc_html($description); ?></p>
+            <?php endif; ?>
+        </td>
+    </tr>
+    <?php
+}
+
+function itstudio_join_render_result_file_row($field_key, $label, $settings, $description = '') {
+    $attachment_id = isset($settings[$field_key]) ? absint($settings[$field_key]) : 0;
+    $file_url = $attachment_id > 0 ? wp_get_attachment_url($attachment_id) : '';
+    $filename = $attachment_id > 0 ? basename((string) get_attached_file($attachment_id)) : '';
+    ?>
+    <tr>
+        <th scope="row"><label><?php echo esc_html($label); ?></label></th>
+        <td>
+            <input type="hidden" class="itstudio-join-result-file-id" name="itstudio_join_settings[<?php echo esc_attr($field_key); ?>]" value="<?php echo esc_attr($attachment_id); ?>">
+            <div class="itstudio-join-result-file-preview" style="margin-bottom:10px;<?php echo $file_url !== '' ? '' : 'display:none;'; ?>">
+                <a class="itstudio-join-result-file-link" href="<?php echo esc_url($file_url); ?>" target="_blank" rel="noopener"><?php echo esc_html($filename !== '' ? $filename : $file_url); ?></a>
+            </div>
+            <button type="button" class="button itstudio-join-result-file-upload"><?php esc_html_e('上传 / 选择结果文件', 'itstudio'); ?></button>
+            <button type="button" class="button-link-delete itstudio-join-result-file-clear" style="margin-left:8px;<?php echo $file_url !== '' ? '' : 'display:none;'; ?>"><?php esc_html_e('移除', 'itstudio'); ?></button>
+            <?php if ($description !== '') : ?>
+                <p class="description"><?php echo esc_html($description); ?></p>
+            <?php else : ?>
+                <p class="description">支持 CSV / XLSX。列结构：姓名,QQ,邮箱,学号,手机,是否通过（1=通过，其他=未通过）。</p>
             <?php endif; ?>
         </td>
     </tr>
@@ -2639,11 +3375,18 @@ function itstudio_join_render_settings_page() {
                 <?php itstudio_join_render_photo_field_row('photo_second_interview', '第二次面试图片', $settings); ?>
                 <?php itstudio_join_render_photo_field_row('photo_public_notice', '录取结果公布阶段图片', $settings); ?>
                 <?php itstudio_join_render_photo_field_row('photo_inactive', '非招新时段图片', $settings); ?>
-                <?php itstudio_join_render_result_records_row('result_registration_records', '报名阶段结果（已报名名单）', $settings, '用于“报名阶段查询”：匹配到即显示“已报名”，否则显示“未报名”。'); ?>
-                <?php itstudio_join_render_result_records_row('result_first_interview_records', '第一次面试结果（通过名单）', $settings, '用于“一面结束后查询”：在名单内显示“已通过第一次面试”，否则显示未通过。'); ?>
-                <?php itstudio_join_render_result_records_row('result_assessment_records', '国庆能力摸底结果（通过名单）', $settings, '用于“摸底结束后查询”：在名单内显示“已通过国庆能力摸底”，否则显示未通过。'); ?>
-                <?php itstudio_join_render_result_records_row('result_second_interview_records', '第二次面试结果（通过名单）', $settings, '用于“二面结束后查询”：在名单内显示“已通过第二次面试”，否则显示未通过。'); ?>
-                <?php itstudio_join_render_result_records_row('result_admission_records', '录取结果（录取名单）', $settings, '用于“录取结果公布阶段查询”：在名单内显示“已录取”，否则显示未录取。'); ?>
+                <tr>
+                    <th scope="row"><label>结果数据来源</label></th>
+                    <td>
+                        <input type="hidden" name="itstudio_join_settings[result_data_source]" value="file">
+                        <strong>CSV / XLSX 文件上传</strong>
+                        <p class="description">上传第一次面试、国庆能力摸底、第二次面试、录取结果四个阶段文件，系统按“姓名,QQ,邮箱,学号,手机,是否通过”进行查询。最后一列为 1 视为通过，否则未通过。</p>
+                    </td>
+                </tr>
+                <?php itstudio_join_render_result_file_row('result_first_interview_file', '第一次面试结果文件', $settings); ?>
+                <?php itstudio_join_render_result_file_row('result_assessment_file', '国庆能力摸底结果文件', $settings); ?>
+                <?php itstudio_join_render_result_file_row('result_second_interview_file', '第二次面试结果文件', $settings); ?>
+                <?php itstudio_join_render_result_file_row('result_admission_file', '录取结果文件', $settings); ?>
                 <tr>
                     <th scope="row"><label for="itstudio_join_signup_shortcode">报名表单 Shortcode</label></th>
                     <td>
@@ -2655,6 +3398,15 @@ function itstudio_join_render_settings_page() {
             <?php submit_button('保存设置'); ?>
         </form>
 
+        <div class="notice notice-info" style="padding:12px 14px; margin: 16px 0;">
+            <h2 style="margin:0 0 8px;">阶段结果文件使用说明</h2>
+            <ol style="margin:0 0 0 18px;">
+                <li>上传四个阶段结果文件：第一次面试、国庆能力摸底、第二次面试、录取结果（报名阶段无需结果文件）。</li>
+                <li>文件列顺序固定为：<code>姓名,QQ,邮箱,学号,手机,是否通过</code>。</li>
+                <li><strong>是否通过</strong> 字段：<code>1</code> 表示通过；其他任意值（含 <code>0</code>、空）都按未通过处理。</li>
+                <li>前台用户可使用姓名、QQ、邮箱、学号进行查询，系统会按当前阶段自动返回对应进度。</li>
+            </ol>
+        </div>
         <hr>
         <h2>阶段预览</h2>
         <p>国庆能力摸底默认固定为每年 10 月 1 日至 10 月 7 日；如填写上方“摸底开始/结束日期（调试）”则优先使用调试时间，留空则恢复默认固定窗口。</p>
@@ -2753,6 +3505,82 @@ function itstudio_join_render_settings_page() {
                         }
                         if (preview) {
                             preview.src = '';
+                            preview.style.display = 'none';
+                        }
+                        button.style.display = 'none';
+                    });
+                });
+
+                const resultFileButtons = document.querySelectorAll('.itstudio-join-result-file-upload');
+                resultFileButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        if (!window.wp || !wp.media) {
+                            return;
+                        }
+
+                        const row = button.closest('td');
+                        if (!row) {
+                            return;
+                        }
+
+                        const input = row.querySelector('.itstudio-join-result-file-id');
+                        const preview = row.querySelector('.itstudio-join-result-file-preview');
+                        const link = row.querySelector('.itstudio-join-result-file-link');
+                        const clearBtn = row.querySelector('.itstudio-join-result-file-clear');
+                        if (!input || !preview || !link) {
+                            return;
+                        }
+
+                        const frame = wp.media({
+                            title: '选择结果文件',
+                            button: { text: '使用此文件' },
+                            multiple: false,
+                        });
+
+                        frame.on('select', () => {
+                            const selection = frame.state().get('selection').first();
+                            if (!selection) {
+                                return;
+                            }
+                            const data = selection.toJSON();
+                            const fileUrl = data.url || '';
+                            const filename = data.filename || (fileUrl ? fileUrl.split('/').pop() : '');
+                            const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
+                            if (!['csv', 'xlsx'].includes(ext)) {
+                                window.alert('请上传 CSV 或 XLSX 文件。');
+                                return;
+                            }
+
+                            input.value = data.id || '';
+                            link.href = fileUrl || '#';
+                            link.textContent = filename || fileUrl || '';
+                            preview.style.display = fileUrl ? 'block' : 'none';
+                            if (clearBtn) {
+                                clearBtn.style.display = fileUrl ? 'inline' : 'none';
+                            }
+                        });
+
+                        frame.open();
+                    });
+                });
+
+                document.querySelectorAll('.itstudio-join-result-file-clear').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const row = button.closest('td');
+                        if (!row) {
+                            return;
+                        }
+                        const input = row.querySelector('.itstudio-join-result-file-id');
+                        const preview = row.querySelector('.itstudio-join-result-file-preview');
+                        const link = row.querySelector('.itstudio-join-result-file-link');
+                        if (input) {
+                            input.value = '';
+                        }
+                        if (link) {
+                            link.href = '#';
+                            link.textContent = '';
+                        }
+                        if (preview) {
                             preview.style.display = 'none';
                         }
                         button.style.display = 'none';

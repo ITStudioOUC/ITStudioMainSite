@@ -19,8 +19,9 @@ $current_stage_mode = isset($join_runtime['current_stage_mode']) ? (string) $joi
 
 $is_registration_open = !empty($join_runtime['is_registration_open']);
 $is_notice_open = !empty($join_runtime['is_notice_open']);
+$is_notice_finished = !empty($join_runtime['is_notice_finished']);
 $show_progress_visual = !empty($join_runtime['show_progress_visual']);
-$is_progress_query_open = !empty($join_runtime['show_progress_visual']);
+$is_progress_query_open = !empty($join_runtime['is_query_open']);
 
 $current_label_cn = isset($current_stage['label_cn']) ? (string) $current_stage['label_cn'] : '当前未在招新时段';
 $current_label_en = isset($current_stage['label_en']) ? (string) $current_stage['label_en'] : 'Recruitment is currently closed';
@@ -211,11 +212,15 @@ if ($is_post_request && function_exists('itstudio_join_detect_form_submission_st
                 <?php foreach ($join_stages as $stage) : ?>
                     <?php
                     $stage_status = isset($stage['status']) ? (string) $stage['status'] : 'pending';
+                    if ($is_notice_finished) {
+                        // 录取结果公布结束后，所有阶段统一显示为“已结束”。
+                        $stage_status = 'completed';
+                    }
                     $status_cn = '待设置';
                     $status_en = 'Pending';
                     if ($stage_status === 'completed') {
-                        $status_cn = '已完成';
-                        $status_en = 'Completed';
+                        $status_cn = '已结束';
+                        $status_en = 'Ended';
                     } elseif ($stage_status === 'active') {
                         $status_cn = '进行中';
                         $status_en = 'In Progress';
@@ -239,18 +244,26 @@ if ($is_post_request && function_exists('itstudio_join_detect_form_submission_st
                         && $stage_status === 'completed'
                         && $stage_result_uploaded;
                     $is_query_ready_status = false;
-                    if ($is_mid_stage_query_ready) {
+                    $is_waiting_notice_status = false;
+                    if (!$is_notice_finished && $is_mid_stage_query_ready) {
                         $status_cn = '可查询结果';
                         $status_en = 'Query Available';
                         $is_query_ready_status = true;
                     }
-                    if ($is_public_notice_stage && in_array($stage_status, array('active', 'completed'), true)) {
-                        $status_cn = '可查询结果';
-                        $status_en = 'Query Available';
-                        $is_query_ready_status = true;
+                    if (!$is_notice_finished && $is_public_notice_stage && in_array($stage_status, array('active', 'completed'), true)) {
+                        if ($stage_result_uploaded) {
+                            $status_cn = '可查询结果';
+                            $status_en = 'Query Available';
+                            $is_query_ready_status = true;
+                        } else {
+                            $status_cn = '请耐心等待通知';
+                            $status_en = 'Please wait for notice';
+                            $is_query_ready_status = false;
+                            $is_waiting_notice_status = true;
+                        }
                     }
                     ?>
-                    <li class="join-stage-item is-<?php echo esc_attr($stage_status); ?><?php echo $is_current_stage ? ' is-current' : ''; ?>">
+                    <li class="join-stage-item is-<?php echo esc_attr($stage_status); ?><?php echo $is_current_stage ? ' is-current' : ''; ?><?php echo $is_waiting_notice_status ? ' is-waiting-notice' : ''; ?>">
                         <div class="join-stage-title-row">
                             <h3
                                 class="join-stage-name"
@@ -260,7 +273,7 @@ if ($is_post_request && function_exists('itstudio_join_detect_form_submission_st
                                 <?php echo esc_html((string) ($stage['label_cn'] ?? '')); ?>
                             </h3>
                             <span
-                                class="join-stage-status<?php echo $is_query_ready_status ? ' is-query-ready' : ''; ?>"
+                                class="join-stage-status<?php echo $is_query_ready_status ? ' is-query-ready' : ''; ?><?php echo $is_waiting_notice_status ? ' is-waiting-notice' : ''; ?>"
                                 data-cn="<?php echo esc_attr($status_cn); ?>"
                                 data-en="<?php echo esc_attr($status_en); ?>"
                             >
@@ -321,7 +334,7 @@ if ($is_post_request && function_exists('itstudio_join_detect_form_submission_st
                     <article class="join-form-card">
                         <header class="join-form-head">
                             <h2 data-cn="录取进度查询" data-en="Admission Progress Lookup">录取进度查询</h2>
-                            <p data-cn="报名阶段至录取结果公布阶段可查询" data-en="Available from registration stage to final result release stage.">报名阶段至录取结果公布阶段可查询</p>
+                            <p data-cn="报名结束后至录取结果公布阶段可查询" data-en="Available after registration ends until the final result release stage.">报名结束后至录取结果公布阶段可查询</p>
                         </header>
                         <div class="join-form-content">
                             <form method="get" class="join-progress-query-form">

@@ -501,6 +501,31 @@
   color: var(--color-primary);
 }
 
+.join-stage-item .join-stage-status.is-waiting-notice {
+  color: #e5484d;
+}
+
+.join-stage-item.is-waiting-notice {
+  border-color: color-mix(in srgb, #e5484d 62%, var(--border-default) 38%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #e5484d 7%, var(--bg-card) 93%) 0%,
+    color-mix(in srgb, var(--bg-card) 97%, transparent) 100%
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #e5484d 24%, transparent),
+    0 10px 20px -18px color-mix(in srgb, #e5484d 48%, transparent);
+}
+
+.join-stage-item.is-waiting-notice::before {
+  background: color-mix(in srgb, #e5484d 70%, transparent);
+  opacity: 1;
+}
+
+.join-stage-item.is-waiting-notice .join-stage-status {
+  color: #e5484d;
+}
+
 .join-stage-item.is-completed {
   border-color: color-mix(in srgb, #0f8a4f 48%, var(--border-default) 52%);
   background: linear-gradient(
@@ -516,6 +541,11 @@
 
 .join-stage-item.is-active .join-stage-status {
   color: var(--color-primary);
+}
+
+.join-stage-item.is-waiting-notice.is-active .join-stage-status,
+.join-stage-item.is-waiting-notice.is-current .join-stage-status {
+  color: #e5484d;
 }
 
 .join-stage-item.is-upcoming .join-stage-status,

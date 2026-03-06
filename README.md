@@ -223,7 +223,7 @@ MIT License - 详见 LICENSE 文件
 ### 1. 需要安装的插件
 
 1. **Formidable Forms**  
-用于报名表单、进度查询表单、公示视图（可选使用 Formidable Views）。
+用于报名表单渲染（前台报名）。
 2. **WP Mail SMTP**  
 用于 Formidable 提交邮件发送（站点邮件走 SMTP）。
 
@@ -234,29 +234,43 @@ MIT License - 详见 LICENSE 文件
 可配置字段：
 - 报名开始时间（datetime）
 - 报名结束时间（datetime）
-- 第一次面试日期（date）
-- 第二次面试日期（date）
-- 录取公示开始日期（date，系统自动延续 7 天）
+- 第一次面试开始/结束时间（datetime）
+- 第一次面试地点（中/英）
+- 第二次面试开始/结束时间（datetime）
+- 第二次面试地点（中/英）
+- 国庆能力摸底开始/结束日期（调试）
+- 录取结果公布开始日期（date，系统自动延续 7 天）
 - 报名表单 Shortcode
-- 结果查询 Shortcode
-- 公示视图 Shortcode
 
 说明：
 - 「国庆能力摸底阶段」固定为每年 **10/01 - 10/07**。
-- 年份优先取报名开始时间年份；若未设置，则取公示开始年份；仍未设置则取当前年份。
+- 若填写“国庆能力摸底开始/结束日期（调试）”，将优先使用调试时间。
 
-### 3. 前台显示逻辑
+### 3. 阶段结果文件配置（重点）
+
+在同一页面中，为以下阶段上传结果文件（CSV 或 XLSX）：
+- 第一次面试结果文件
+- 国庆能力摸底结果文件
+- 第二次面试结果文件
+- 录取结果文件
+
+文件列顺序必须为：
+
+`姓名,QQ,邮箱,学号,手机,是否通过`
+
+其中：
+- `是否通过 = 1` 表示通过
+- 其他任意值（含 `0`、空）都按未通过处理
+
+注意：
+- 不需要配置任何“字段映射”或“阶段识别字段”。
+- 系统会自动按上述固定列进行识别与查询。
+
+### 4. 前台显示逻辑
 
 - 报名表单：仅在报名阶段显示。
-- 结果查询表单：从报名开始到公示结束前可用。
-- 公示视图：仅在公示 7 天窗口内显示。
+- 录取进度查询：报名阶段不显示；报名结束后按当前阶段显示对应结果（使用姓名/QQ/邮箱/学号查询）。
 - Canvas 进度条：根据当前时间自动高亮阶段（已完成/进行中/未开始）。
-
-### 4. Formidable 推荐配置方式
-
-1. 新建报名表单，复制 shortcode，填入「报名表单 Shortcode」。
-2. 新建结果查询表单（例如：学号/邮箱/手机号 + 状态查询逻辑），填入「结果查询 Shortcode」。
-3. 如需公示名单展示，创建 Formidable View，复制 shortcode，填入「公示视图 Shortcode」。
 
 ### 5. WP Mail SMTP 配置建议
 
@@ -265,17 +279,10 @@ MIT License - 详见 LICENSE 文件
 3. 设置发件人邮箱与发件人名称。
 4. 使用插件自带发送测试邮件，确认可达后再开放报名。
 
-## Join Page Quick Guide (ASCII)
+## 加入我们页面快速说明
 
-- Admin path: Settings -> Recruitment Settings.
-- Configure timeline nodes: registration start/end, interview I date, interview II date, notice start date.
-- Stage "National Day Assessment" is fixed to Oct 1 - Oct 7 (auto year).
-- Set Formidable shortcodes:
-  - registration form shortcode
-  - progress lookup shortcode
-  - public notice view shortcode
-- Frontend visibility rules:
-  - registration form: only in registration window
-  - lookup form: from registration start until notice window ends
-  - public notice view: only during 7-day notice window
-- Mail delivery: configure WP Mail SMTP plugin for Formidable emails.
+- 后台路径：`设置 -> 招新设置`。
+- 先配置时间节点：报名开始/结束、一面开始/结束、二面开始/结束、录取结果公布开始日期。
+- “国庆能力摸底”默认是每年 `10/01 - 10/07`（可用调试日期覆盖）。
+- 报名表单短代码使用 Formidable 表单，邮件发送建议配合 WP Mail SMTP。
+- 阶段结果统一使用 CSV/XLSX 上传，不再使用 Formidable Entries 做结果查询。
