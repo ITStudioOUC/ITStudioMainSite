@@ -317,8 +317,278 @@ function itstudio_register_acf_fields() {
         'active' => true,
         'show_in_rest' => 1,
     ));
+
+    acf_add_local_field_group(array(
+        'key' => 'group_itstudio_recruitment_article',
+        'title' => '招新文章标记',
+        'fields' => array(
+            array(
+                'key' => 'field_itstudio_is_recruitment_article',
+                'label' => '是否为招新文章',
+                'name' => 'itstudio_is_recruitment_article',
+                'type' => 'true_false',
+                'instructions' => '勾选后，该文章会在“加入我们”页面顶部新闻条中显示（按发布时间排序）。',
+                'required' => 0,
+                'default_value' => 0,
+                'ui' => 1,
+                'ui_on_text' => '是',
+                'ui_off_text' => '否',
+            ),
+        ),
+        'location' => array(
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'announcement',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'news',
+                ),
+            ),
+            array(
+                array(
+                    'param' => 'post_type',
+                    'operator' => '==',
+                    'value' => 'post',
+                ),
+            ),
+        ),
+        'position' => 'side',
+        'style' => 'default',
+        'active' => true,
+        'show_in_rest' => 1,
+    ));
 }
 add_action('acf/init', 'itstudio_register_acf_fields');
+
+function itstudio_get_recruitment_article_meta_key() {
+    return 'itstudio_is_recruitment_article';
+}
+
+function itstudio_normalize_recruitment_flag($value) {
+    if (is_bool($value)) {
+        return $value;
+    }
+
+    if (is_numeric($value)) {
+        return ((int) $value) > 0;
+    }
+
+    $value = strtolower(trim((string) $value));
+    return in_array($value, array('1', 'true', 'yes', 'on', 'y'), true);
+}
+
+function itstudio_is_recruitment_article($post_id) {
+    $post_id = (int) $post_id;
+    if ($post_id <= 0) {
+        return false;
+    }
+
+    $meta_key = itstudio_get_recruitment_article_meta_key();
+    $meta_keys = array(
+        $meta_key,
+        '_itstudio_is_recruitment_article',
+        'itstudio_join_article',
+        'join_recruitment_article',
+        'is_recruitment_article',
+    );
+
+    foreach ($meta_keys as $key) {
+        $raw = get_post_meta($post_id, $key, true);
+        if ($raw !== '' && $raw !== null && itstudio_normalize_recruitment_flag($raw)) {
+            return true;
+        }
+    }
+
+    if (function_exists('get_field')) {
+        $acf_keys = array(
+            'itstudio_is_recruitment_article',
+            'is_recruitment_article',
+            'itstudio_join_article',
+        );
+        foreach ($acf_keys as $acf_key) {
+            $raw = get_field($acf_key, $post_id, false);
+            if ($raw !== '' && $raw !== null && itstudio_normalize_recruitment_flag($raw)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function itstudio_add_recruitment_meta_boxes() {
+    $screens = array('announcement', 'news', 'post');
+    foreach ($screens as $screen) {
+        add_meta_box(
+            'itstudio_recruitment_flag',
+            __('招新文章', 'itstudio'),
+            'itstudio_render_recruitment_meta_box',
+            $screen,
+            'side',
+            'high'
+        );
+    }
+}
+add_action('add_meta_boxes', 'itstudio_add_recruitment_meta_boxes');
+
+function itstudio_render_recruitment_meta_box($post) {
+    $meta_key = itstudio_get_recruitment_article_meta_key();
+    $checked = itstudio_is_recruitment_article((int) $post->ID);
+    wp_nonce_field('itstudio_save_recruitment_meta', 'itstudio_recruitment_meta_nonce');
+    ?>
+    <p>
+        <label for="itstudio_is_recruitment_article">
+            <input
+                type="checkbox"
+                id="itstudio_is_recruitment_article"
+                name="itstudio_is_recruitment_article"
+                value="1"
+                <?php checked($checked); ?>
+            >
+            <?php esc_html_e('在加入我们页面显示为招新新闻', 'itstudio'); ?>
+        </label>
+    </p>
+    <p style="color:#666;line-height:1.5;margin:0;">
+        <?php esc_html_e('仅显示当年且已发布的招新文章，最多展示 5 篇。', 'itstudio'); ?>
+    </p>
+    <input type="hidden" name="itstudio_recruitment_meta_key" value="<?php echo esc_attr($meta_key); ?>">
+    <?php
+}
+
+function itstudio_save_recruitment_meta_box($post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
+        return;
+    }
+    if (!isset($_POST['itstudio_recruitment_meta_nonce'])) {
+        return;
+    }
+
+    $nonce = sanitize_text_field(wp_unslash($_POST['itstudio_recruitment_meta_nonce']));
+    if (!wp_verify_nonce($nonce, 'itstudio_save_recruitment_meta')) {
+        return;
+    }
+
+    $post_type = get_post_type($post_id);
+    if (!in_array($post_type, array('announcement', 'news', 'post'), true)) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $meta_key = itstudio_get_recruitment_article_meta_key();
+    $checked = isset($_POST['itstudio_is_recruitment_article'])
+        ? sanitize_text_field(wp_unslash($_POST['itstudio_is_recruitment_article']))
+        : '';
+    if (itstudio_normalize_recruitment_flag($checked)) {
+        update_post_meta($post_id, $meta_key, '1');
+    } else {
+        delete_post_meta($post_id, $meta_key);
+    }
+}
+add_action('save_post', 'itstudio_save_recruitment_meta_box');
+
+function itstudio_join_get_recruitment_feed_items($join_runtime = array(), $limit = 5) {
+    $limit = max(1, min(10, (int) $limit));
+    $join_runtime = is_array($join_runtime) ? $join_runtime : array();
+
+    $now = new DateTimeImmutable('now', wp_timezone());
+    $now_year = (int) $now->format('Y');
+    $display_year = isset($join_runtime['recruitment_year']) && is_numeric($join_runtime['recruitment_year'])
+        ? (int) $join_runtime['recruitment_year']
+        : $now_year;
+
+    $season_start_ts = null;
+    $season_end_ts = null;
+    $stages = isset($join_runtime['stages']) && is_array($join_runtime['stages']) ? $join_runtime['stages'] : array();
+    foreach ($stages as $stage) {
+        if (!is_array($stage)) {
+            continue;
+        }
+        $start_ts = isset($stage['start_ts']) && is_numeric($stage['start_ts']) ? (int) $stage['start_ts'] : null;
+        $end_ts = isset($stage['end_ts']) && is_numeric($stage['end_ts']) ? (int) $stage['end_ts'] : null;
+        if ($start_ts !== null && ($season_start_ts === null || $start_ts < $season_start_ts)) {
+            $season_start_ts = $start_ts;
+        }
+        if ($end_ts !== null && ($season_end_ts === null || $end_ts > $season_end_ts)) {
+            $season_end_ts = $end_ts;
+        }
+    }
+
+    $now_ts = (int) (isset($join_runtime['now_ts']) && is_numeric($join_runtime['now_ts']) ? $join_runtime['now_ts'] : ((int) $now->format('U') * 1000));
+    if ($season_start_ts !== null && $now_ts < $season_start_ts && $display_year > $now_year) {
+        // 下年招新未开始：继续展示本年招新资讯
+        $display_year = $now_year;
+    }
+
+    $query = new WP_Query(array(
+        'post_type' => array('announcement', 'news', 'post'),
+        'post_status' => 'publish',
+        'posts_per_page' => 80,
+        'orderby' => 'date',
+        'order' => 'DESC',
+        'no_found_rows' => true,
+        'ignore_sticky_posts' => true,
+        'date_query' => array(
+            array(
+                'year' => $display_year,
+            ),
+        ),
+    ));
+
+    $items = array();
+    if ($query->have_posts()) {
+        foreach ($query->posts as $post) {
+            if (count($items) >= $limit) {
+                break;
+            }
+
+            $post_id = (int) $post->ID;
+            if (!itstudio_is_recruitment_article($post_id)) {
+                continue;
+            }
+
+            $title = trim((string) get_the_title($post_id));
+            $url = (string) get_permalink($post_id);
+            if ($title === '' || $url === '') {
+                continue;
+            }
+
+            $excerpt = function_exists('itstudio_get_post_excerpt_chars')
+                ? itstudio_get_post_excerpt_chars($post_id, 72)
+                : wp_html_excerpt(trim(wp_strip_all_tags((string) get_post_field('post_excerpt', $post_id))), 72, '...');
+
+            if ($excerpt === '') {
+                $excerpt = '...';
+            }
+
+            $items[] = array(
+                'id' => $post_id,
+                'title' => $title,
+                'excerpt' => $excerpt,
+                'url' => $url,
+                'date' => get_the_date('Y-m-d', $post_id),
+                'type' => get_post_type($post_id),
+            );
+        }
+    }
+    wp_reset_postdata();
+
+    return array(
+        'display_year' => $display_year,
+        'items' => $items,
+    );
+}
 
 function itstudio_get_service_url_meta_key() {
     return '_itstudio_service_url';
@@ -1121,8 +1391,21 @@ function itstudio_join_get_default_settings() {
         'registration_start' => '',
         'registration_end' => '',
         'first_interview_date' => '',
+        'first_interview_end' => '',
+        'first_interview_location_cn' => '',
+        'first_interview_location_en' => '',
         'second_interview_date' => '',
+        'second_interview_end' => '',
+        'second_interview_location_cn' => '',
+        'second_interview_location_en' => '',
+        'assessment_start_date' => '',
+        'assessment_end_date' => '',
         'notice_start_date' => '',
+        'result_registration_records' => '',
+        'result_first_interview_records' => '',
+        'result_assessment_records' => '',
+        'result_second_interview_records' => '',
+        'result_admission_records' => '',
         'photo_registration' => 0,
         'photo_first_interview' => 0,
         'photo_assessment' => 0,
@@ -1130,8 +1413,6 @@ function itstudio_join_get_default_settings() {
         'photo_public_notice' => 0,
         'photo_inactive' => 0,
         'signup_form_shortcode' => '',
-        'query_form_shortcode' => '',
-        'notice_view_shortcode' => '',
     );
 }
 
@@ -1188,6 +1469,26 @@ function itstudio_join_sanitize_shortcode_value($value) {
     return trim(sanitize_text_field(wp_unslash($value)));
 }
 
+function itstudio_join_sanitize_records_value($value) {
+    if (!is_string($value)) {
+        return '';
+    }
+
+    $value = sanitize_textarea_field(wp_unslash($value));
+    $value = str_replace(array("\r\n", "\r"), "\n", $value);
+    $lines = explode("\n", $value);
+    $clean_lines = array();
+    foreach ($lines as $line) {
+        $line = trim((string) $line);
+        if ($line === '') {
+            continue;
+        }
+        $clean_lines[] = $line;
+    }
+
+    return implode("\n", $clean_lines);
+}
+
 function itstudio_join_sanitize_settings($input) {
     $defaults = itstudio_join_get_default_settings();
     $input = is_array($input) ? $input : array();
@@ -1195,12 +1496,23 @@ function itstudio_join_sanitize_settings($input) {
     $sanitized = array(
         'registration_start' => itstudio_join_sanitize_datetime_local_value($input['registration_start'] ?? ''),
         'registration_end' => itstudio_join_sanitize_datetime_local_value($input['registration_end'] ?? ''),
-        'first_interview_date' => itstudio_join_sanitize_date_value($input['first_interview_date'] ?? ''),
-        'second_interview_date' => itstudio_join_sanitize_date_value($input['second_interview_date'] ?? ''),
+        'first_interview_date' => itstudio_join_sanitize_datetime_local_value($input['first_interview_date'] ?? ''),
+        'first_interview_end' => itstudio_join_sanitize_datetime_local_value($input['first_interview_end'] ?? ''),
+        'first_interview_location_cn' => itstudio_join_sanitize_shortcode_value($input['first_interview_location_cn'] ?? ''),
+        'first_interview_location_en' => itstudio_join_sanitize_shortcode_value($input['first_interview_location_en'] ?? ''),
+        'second_interview_date' => itstudio_join_sanitize_datetime_local_value($input['second_interview_date'] ?? ''),
+        'second_interview_end' => itstudio_join_sanitize_datetime_local_value($input['second_interview_end'] ?? ''),
+        'second_interview_location_cn' => itstudio_join_sanitize_shortcode_value($input['second_interview_location_cn'] ?? ''),
+        'second_interview_location_en' => itstudio_join_sanitize_shortcode_value($input['second_interview_location_en'] ?? ''),
+        'assessment_start_date' => itstudio_join_sanitize_date_value($input['assessment_start_date'] ?? ''),
+        'assessment_end_date' => itstudio_join_sanitize_date_value($input['assessment_end_date'] ?? ''),
         'notice_start_date' => itstudio_join_sanitize_date_value($input['notice_start_date'] ?? ''),
+        'result_registration_records' => itstudio_join_sanitize_records_value($input['result_registration_records'] ?? ''),
+        'result_first_interview_records' => itstudio_join_sanitize_records_value($input['result_first_interview_records'] ?? ''),
+        'result_assessment_records' => itstudio_join_sanitize_records_value($input['result_assessment_records'] ?? ''),
+        'result_second_interview_records' => itstudio_join_sanitize_records_value($input['result_second_interview_records'] ?? ''),
+        'result_admission_records' => itstudio_join_sanitize_records_value($input['result_admission_records'] ?? ''),
         'signup_form_shortcode' => itstudio_join_sanitize_shortcode_value($input['signup_form_shortcode'] ?? ''),
-        'query_form_shortcode' => itstudio_join_sanitize_shortcode_value($input['query_form_shortcode'] ?? ''),
-        'notice_view_shortcode' => itstudio_join_sanitize_shortcode_value($input['notice_view_shortcode'] ?? ''),
     );
 
     foreach (itstudio_join_get_photo_field_map() as $field_key) {
@@ -1269,6 +1581,387 @@ function itstudio_join_parse_date($value) {
     }
 
     return $parsed;
+}
+
+function itstudio_join_to_datetime_local_input_value($value, $date_only_as_end_of_day = false) {
+    $parsed = itstudio_join_parse_datetime_local($value, $date_only_as_end_of_day);
+    return $parsed instanceof DateTimeImmutable ? $parsed->format('Y-m-d\TH:i') : '';
+}
+
+function itstudio_join_to_date_input_value($value) {
+    $parsed = itstudio_join_parse_date($value);
+    if (!($parsed instanceof DateTimeImmutable)) {
+        $parsed = itstudio_join_parse_datetime_local($value, false);
+    }
+    return $parsed instanceof DateTimeImmutable ? $parsed->format('Y-m-d') : '';
+}
+
+function itstudio_join_get_result_field_map() {
+    return array(
+        'registration' => 'result_registration_records',
+        'first_interview' => 'result_first_interview_records',
+        'assessment' => 'result_assessment_records',
+        'second_interview' => 'result_second_interview_records',
+        'public_notice' => 'result_admission_records',
+    );
+}
+
+function itstudio_join_has_uploaded_result_for_stage($settings, $stage_key) {
+    $settings = is_array($settings) ? $settings : array();
+    $field_map = itstudio_join_get_result_field_map();
+    $field_key = isset($field_map[$stage_key]) ? $field_map[$stage_key] : '';
+    if ($field_key === '') {
+        return false;
+    }
+
+    return trim((string) ($settings[$field_key] ?? '')) !== '';
+}
+
+function itstudio_join_normalize_lookup_value($field, $value) {
+    $field = trim((string) $field);
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    if ($field === 'qq') {
+        return preg_replace('/\D+/', '', $value);
+    }
+
+    if ($field === 'email') {
+        return strtolower($value);
+    }
+
+    if ($field === 'student_id') {
+        return strtoupper(preg_replace('/\s+/u', '', $value));
+    }
+
+    $value = preg_replace('/\s+/u', '', $value);
+    if (function_exists('mb_strtolower')) {
+        return mb_strtolower($value, 'UTF-8');
+    }
+
+    return strtolower($value);
+}
+
+function itstudio_join_parse_result_records($raw) {
+    $raw = str_replace(array("\r\n", "\r"), "\n", (string) $raw);
+    if ($raw === '') {
+        return array();
+    }
+
+    $records = array();
+    $lines = explode("\n", $raw);
+    foreach ($lines as $line) {
+        $line = trim((string) $line);
+        if ($line === '' || strpos($line, '#') === 0) {
+            continue;
+        }
+
+        $header_probe = preg_replace('/\s+/u', '', $line);
+        $header_probe = function_exists('mb_strtolower') ? mb_strtolower($header_probe, 'UTF-8') : strtolower($header_probe);
+        $is_cn_header = (strpos($header_probe, '姓名') !== false) && (strpos($header_probe, 'qq') !== false || strpos($header_probe, '邮箱') !== false || strpos($header_probe, '学号') !== false);
+        $is_en_header = (strpos($header_probe, 'name') !== false) && (strpos($header_probe, 'qq') !== false || strpos($header_probe, 'email') !== false || strpos($header_probe, 'student') !== false);
+        if ($is_cn_header || $is_en_header) {
+            continue;
+        }
+
+        $parts = preg_split('/[,\|，\t]+/u', $line);
+        $parts = is_array($parts) ? array_values(array_filter(array_map('trim', $parts), static function ($item) {
+            return $item !== '';
+        })) : array();
+        if (empty($parts)) {
+            continue;
+        }
+
+        $name = '';
+        $qq = '';
+        $email = '';
+        $student_id = '';
+
+        if (count($parts) === 1) {
+            $single = (string) $parts[0];
+            if (strpos($single, '@') !== false) {
+                $email = $single;
+            } elseif (preg_match('/^\d{5,}$/', $single)) {
+                $qq = $single;
+            } else {
+                $name = $single;
+            }
+        } else {
+            $name = (string) ($parts[0] ?? '');
+            $qq = (string) ($parts[1] ?? '');
+            $email = (string) ($parts[2] ?? '');
+            $student_id = (string) ($parts[3] ?? '');
+        }
+
+        $record = array(
+            'name' => itstudio_join_normalize_lookup_value('name', $name),
+            'qq' => itstudio_join_normalize_lookup_value('qq', $qq),
+            'email' => itstudio_join_normalize_lookup_value('email', $email),
+            'student_id' => itstudio_join_normalize_lookup_value('student_id', $student_id),
+        );
+
+        if ($record['name'] === '' && $record['qq'] === '' && $record['email'] === '' && $record['student_id'] === '') {
+            continue;
+        }
+
+        $records[] = $record;
+    }
+
+    return $records;
+}
+
+function itstudio_join_record_matches_query($record, $query) {
+    $record = is_array($record) ? $record : array();
+    $query = is_array($query) ? $query : array();
+    $has_any_query = false;
+
+    foreach (array('name', 'qq', 'email', 'student_id') as $field) {
+        $q = trim((string) ($query[$field] ?? ''));
+        if ($q === '') {
+            continue;
+        }
+        $has_any_query = true;
+        $r = trim((string) ($record[$field] ?? ''));
+        if ($r === '' || $r !== $q) {
+            return false;
+        }
+    }
+
+    return $has_any_query;
+}
+
+function itstudio_join_find_record_in_stage_results($settings, $stage_key, $query) {
+    $settings = is_array($settings) ? $settings : array();
+    $field_map = itstudio_join_get_result_field_map();
+    $field_key = isset($field_map[$stage_key]) ? $field_map[$stage_key] : '';
+    if ($field_key === '') {
+        return false;
+    }
+
+    $raw = (string) ($settings[$field_key] ?? '');
+    if (trim($raw) === '') {
+        return false;
+    }
+
+    $records = itstudio_join_parse_result_records($raw);
+    if (empty($records)) {
+        return false;
+    }
+
+    foreach ($records as $record) {
+        if (itstudio_join_record_matches_query($record, $query)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function itstudio_join_get_stage_status_by_key($runtime, $stage_key) {
+    $runtime = is_array($runtime) ? $runtime : array();
+    $stages = isset($runtime['stages']) && is_array($runtime['stages']) ? $runtime['stages'] : array();
+    foreach ($stages as $stage) {
+        if (!is_array($stage)) {
+            continue;
+        }
+        if ((string) ($stage['key'] ?? '') === (string) $stage_key) {
+            return (string) ($stage['status'] ?? 'pending');
+        }
+    }
+
+    return 'pending';
+}
+
+function itstudio_join_resolve_progress_lookup($runtime = array(), $request_source = null) {
+    $runtime = is_array($runtime) ? $runtime : array();
+    $settings = isset($runtime['settings']) && is_array($runtime['settings']) ? $runtime['settings'] : itstudio_join_get_settings();
+    $request_source = is_array($request_source) ? $request_source : $_GET;
+
+    $raw_name = isset($request_source['join_query_name']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_name'])) : '';
+    $raw_qq = isset($request_source['join_query_qq']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_qq'])) : '';
+    $raw_email = isset($request_source['join_query_email']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_email'])) : '';
+    $raw_student_id = isset($request_source['join_query_student_id']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_student_id'])) : '';
+
+    $query = array(
+        'name' => itstudio_join_normalize_lookup_value('name', $raw_name),
+        'qq' => itstudio_join_normalize_lookup_value('qq', $raw_qq),
+        'email' => itstudio_join_normalize_lookup_value('email', $raw_email),
+        'student_id' => itstudio_join_normalize_lookup_value('student_id', $raw_student_id),
+    );
+
+    $has_query_value = false;
+    foreach ($query as $value) {
+        if ($value !== '') {
+            $has_query_value = true;
+            break;
+        }
+    }
+
+    $submitted = isset($request_source['join_progress_lookup']) || $has_query_value;
+    $response = array(
+        'submitted' => $submitted,
+        'has_query' => $has_query_value,
+        'name' => $raw_name,
+        'qq' => $raw_qq,
+        'email' => $raw_email,
+        'student_id' => $raw_student_id,
+        'message_cn' => '',
+        'message_en' => '',
+        'tone' => 'info',
+    );
+
+    if (!$submitted) {
+        return $response;
+    }
+
+    if (!$has_query_value) {
+        $response['message_cn'] = '请至少填写姓名、QQ、邮箱、学号中的一项。';
+        $response['message_en'] = 'Please fill at least one item: name, QQ, email or student ID.';
+        $response['tone'] = 'warning';
+        return $response;
+    }
+
+    $status_registration = itstudio_join_get_stage_status_by_key($runtime, 'registration');
+    $status_first = itstudio_join_get_stage_status_by_key($runtime, 'first_interview');
+    $status_assessment = itstudio_join_get_stage_status_by_key($runtime, 'assessment');
+    $status_second = itstudio_join_get_stage_status_by_key($runtime, 'second_interview');
+    $status_notice = itstudio_join_get_stage_status_by_key($runtime, 'public_notice');
+
+    $uploaded_registration = itstudio_join_has_uploaded_result_for_stage($settings, 'registration');
+    $uploaded_first = itstudio_join_has_uploaded_result_for_stage($settings, 'first_interview');
+    $uploaded_assessment = itstudio_join_has_uploaded_result_for_stage($settings, 'assessment');
+    $uploaded_second = itstudio_join_has_uploaded_result_for_stage($settings, 'second_interview');
+    $uploaded_notice = itstudio_join_has_uploaded_result_for_stage($settings, 'public_notice');
+
+    if (!$uploaded_registration) {
+        $response['message_cn'] = '报名数据尚未上传，暂无法查询。';
+        $response['message_en'] = 'Registration data has not been uploaded yet.';
+        $response['tone'] = 'warning';
+        return $response;
+    }
+
+    $is_registered = itstudio_join_find_record_in_stage_results($settings, 'registration', $query);
+    if (!$is_registered) {
+        $response['message_cn'] = '未报名。';
+        $response['message_en'] = 'Not registered.';
+        $response['tone'] = 'error';
+        return $response;
+    }
+
+    if ($status_registration === 'active' || $status_registration === 'upcoming' || $status_first === 'upcoming' || $status_first === 'pending') {
+        $response['message_cn'] = '已报名。';
+        $response['message_en'] = 'Registered.';
+        $response['tone'] = 'success';
+        return $response;
+    }
+
+    if ($status_first === 'completed') {
+        if (!$uploaded_first) {
+            $response['message_cn'] = '第一次面试已结束，结果尚未上传。';
+            $response['message_en'] = 'Interview I has ended, but results are not uploaded yet.';
+            $response['tone'] = 'warning';
+            return $response;
+        }
+
+        $passed_first = itstudio_join_find_record_in_stage_results($settings, 'first_interview', $query);
+        if (!$passed_first) {
+            $response['message_cn'] = '未通过第一次面试，期待来年再次报名。';
+            $response['message_en'] = 'You did not pass Interview I. Welcome to apply again next year.';
+            $response['tone'] = 'error';
+            return $response;
+        }
+
+        if ($status_assessment === 'upcoming' || $status_assessment === 'pending' || $status_assessment === 'active') {
+            $response['message_cn'] = '恭喜，您已通过第一次面试。';
+            $response['message_en'] = 'Congratulations! You have passed Interview I.';
+            $response['tone'] = 'success';
+            return $response;
+        }
+    }
+
+    if ($status_assessment === 'completed') {
+        if (!$uploaded_assessment) {
+            $response['message_cn'] = '国庆能力摸底已结束，结果尚未上传。';
+            $response['message_en'] = 'Assessment stage has ended, but results are not uploaded yet.';
+            $response['tone'] = 'warning';
+            return $response;
+        }
+
+        $passed_assessment = itstudio_join_find_record_in_stage_results($settings, 'assessment', $query);
+        if (!$passed_assessment) {
+            $response['message_cn'] = '未通过国庆能力摸底，期待来年再次报名。';
+            $response['message_en'] = 'You did not pass the assessment stage. Welcome to apply again next year.';
+            $response['tone'] = 'error';
+            return $response;
+        }
+
+        if ($status_second === 'upcoming' || $status_second === 'pending' || $status_second === 'active') {
+            $response['message_cn'] = '恭喜，您已通过国庆能力摸底。';
+            $response['message_en'] = 'Congratulations! You have passed the assessment stage.';
+            $response['tone'] = 'success';
+            return $response;
+        }
+    }
+
+    if ($status_second === 'completed') {
+        if (!$uploaded_second) {
+            $response['message_cn'] = '第二次面试已结束，结果尚未上传。';
+            $response['message_en'] = 'Interview II has ended, but results are not uploaded yet.';
+            $response['tone'] = 'warning';
+            return $response;
+        }
+
+        $passed_second = itstudio_join_find_record_in_stage_results($settings, 'second_interview', $query);
+        if (!$passed_second) {
+            $response['message_cn'] = '未通过第二次面试，期待来年再次报名。';
+            $response['message_en'] = 'You did not pass Interview II. Welcome to apply again next year.';
+            $response['tone'] = 'error';
+            return $response;
+        }
+
+        if ($status_notice === 'pending' || $status_notice === 'upcoming' || $status_notice === 'active') {
+            if ($status_notice === 'active' && $uploaded_notice) {
+                $admitted = itstudio_join_find_record_in_stage_results($settings, 'public_notice', $query);
+                if ($admitted) {
+                    $response['message_cn'] = '恭喜，您已被录取。';
+                    $response['message_en'] = 'Congratulations! You have been admitted.';
+                    $response['tone'] = 'success';
+                    return $response;
+                }
+
+                $response['message_cn'] = '很遗憾，您未被录取，期待来年再次报名。';
+                $response['message_en'] = 'Sorry, you were not admitted. Welcome to apply again next year.';
+                $response['tone'] = 'error';
+                return $response;
+            }
+
+            $response['message_cn'] = '恭喜，您已通过第二次面试，请等待录取结果公布。';
+            $response['message_en'] = 'Congratulations! You have passed Interview II. Please wait for the final result.';
+            $response['tone'] = 'success';
+            return $response;
+        }
+    }
+
+    if (($status_notice === 'active' || $status_notice === 'completed') && $uploaded_notice) {
+        $admitted = itstudio_join_find_record_in_stage_results($settings, 'public_notice', $query);
+        if ($admitted) {
+            $response['message_cn'] = '恭喜，您已被录取。';
+            $response['message_en'] = 'Congratulations! You have been admitted.';
+            $response['tone'] = 'success';
+        } else {
+            $response['message_cn'] = '很遗憾，您未被录取，期待来年再次报名。';
+            $response['message_en'] = 'Sorry, you were not admitted. Welcome to apply again next year.';
+            $response['tone'] = 'error';
+        }
+        return $response;
+    }
+
+    $response['message_cn'] = '已报名。';
+    $response['message_en'] = 'Registered.';
+    $response['tone'] = 'success';
+    return $response;
 }
 
 function itstudio_join_datetime_to_ms($date) {
@@ -1424,13 +2117,49 @@ function itstudio_join_get_runtime_data() {
         $registration_end = $registration_start;
     }
 
-    $first_interview_day = itstudio_join_parse_date($settings['first_interview_date']);
-    $first_interview_start = $first_interview_day instanceof DateTimeImmutable ? $first_interview_day->setTime(0, 0, 0) : null;
-    $first_interview_end = $first_interview_day instanceof DateTimeImmutable ? $first_interview_day->setTime(23, 59, 59) : null;
+    $first_interview_start_raw = isset($settings['first_interview_date']) ? (string) $settings['first_interview_date'] : '';
+    $first_interview_end_raw = isset($settings['first_interview_end']) ? (string) $settings['first_interview_end'] : '';
+    $first_interview_start = itstudio_join_parse_datetime_local($first_interview_start_raw, false);
+    $first_interview_end = itstudio_join_parse_datetime_local($first_interview_end_raw, true);
+    if ($first_interview_start instanceof DateTimeImmutable && !($first_interview_end instanceof DateTimeImmutable)) {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($first_interview_start_raw))) {
+            $first_interview_end = $first_interview_start->setTime(23, 59, 59);
+        } else {
+            $first_interview_end = $first_interview_start;
+        }
+    } elseif (!($first_interview_start instanceof DateTimeImmutable) && $first_interview_end instanceof DateTimeImmutable) {
+        $first_interview_start = $first_interview_end;
+    } elseif ($first_interview_start instanceof DateTimeImmutable && $first_interview_end instanceof DateTimeImmutable && $first_interview_end < $first_interview_start) {
+        $first_interview_end = $first_interview_start;
+    }
 
-    $second_interview_day = itstudio_join_parse_date($settings['second_interview_date']);
-    $second_interview_start = $second_interview_day instanceof DateTimeImmutable ? $second_interview_day->setTime(0, 0, 0) : null;
-    $second_interview_end = $second_interview_day instanceof DateTimeImmutable ? $second_interview_day->setTime(23, 59, 59) : null;
+    $second_interview_start_raw = isset($settings['second_interview_date']) ? (string) $settings['second_interview_date'] : '';
+    $second_interview_end_raw = isset($settings['second_interview_end']) ? (string) $settings['second_interview_end'] : '';
+    $second_interview_start = itstudio_join_parse_datetime_local($second_interview_start_raw, false);
+    $second_interview_end = itstudio_join_parse_datetime_local($second_interview_end_raw, true);
+    if ($second_interview_start instanceof DateTimeImmutable && !($second_interview_end instanceof DateTimeImmutable)) {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($second_interview_start_raw))) {
+            $second_interview_end = $second_interview_start->setTime(23, 59, 59);
+        } else {
+            $second_interview_end = $second_interview_start;
+        }
+    } elseif (!($second_interview_start instanceof DateTimeImmutable) && $second_interview_end instanceof DateTimeImmutable) {
+        $second_interview_start = $second_interview_end;
+    } elseif ($second_interview_start instanceof DateTimeImmutable && $second_interview_end instanceof DateTimeImmutable && $second_interview_end < $second_interview_start) {
+        $second_interview_end = $second_interview_start;
+    }
+
+    $first_interview_location_cn = trim((string) ($settings['first_interview_location_cn'] ?? ''));
+    $first_interview_location_en = trim((string) ($settings['first_interview_location_en'] ?? ''));
+    if ($first_interview_location_en === '') {
+        $first_interview_location_en = $first_interview_location_cn;
+    }
+
+    $second_interview_location_cn = trim((string) ($settings['second_interview_location_cn'] ?? ''));
+    $second_interview_location_en = trim((string) ($settings['second_interview_location_en'] ?? ''));
+    if ($second_interview_location_en === '') {
+        $second_interview_location_en = $second_interview_location_cn;
+    }
 
     $notice_start_day = itstudio_join_parse_date($settings['notice_start_date']);
     $notice_start = $notice_start_day instanceof DateTimeImmutable ? $notice_start_day->setTime(0, 0, 0) : null;
@@ -1445,9 +2174,27 @@ function itstudio_join_get_runtime_data() {
         $recruitment_year = (int) $now->format('Y');
     }
 
-    $assessment_start = DateTimeImmutable::createFromFormat('!Y-m-d', sprintf('%04d-10-01', $recruitment_year), $timezone);
-    $assessment_end_base = DateTimeImmutable::createFromFormat('!Y-m-d', sprintf('%04d-10-07', $recruitment_year), $timezone);
-    $assessment_end = $assessment_end_base instanceof DateTimeImmutable ? $assessment_end_base->setTime(23, 59, 59) : null;
+    $default_assessment_start = DateTimeImmutable::createFromFormat('!Y-m-d', sprintf('%04d-10-01', $recruitment_year), $timezone);
+    $default_assessment_end_base = DateTimeImmutable::createFromFormat('!Y-m-d', sprintf('%04d-10-07', $recruitment_year), $timezone);
+    $default_assessment_end = $default_assessment_end_base instanceof DateTimeImmutable ? $default_assessment_end_base->setTime(23, 59, 59) : null;
+
+    $assessment_start_day = itstudio_join_parse_date($settings['assessment_start_date']);
+    $assessment_end_day = itstudio_join_parse_date($settings['assessment_end_date']);
+    $assessment_start = $assessment_start_day instanceof DateTimeImmutable
+        ? $assessment_start_day->setTime(0, 0, 0)
+        : $default_assessment_start;
+    $assessment_end = $assessment_end_day instanceof DateTimeImmutable
+        ? $assessment_end_day->setTime(23, 59, 59)
+        : $default_assessment_end;
+
+    if ($assessment_start_day instanceof DateTimeImmutable && !($assessment_end_day instanceof DateTimeImmutable)) {
+        $assessment_end = $assessment_start->setTime(23, 59, 59);
+    } elseif (!($assessment_start_day instanceof DateTimeImmutable) && $assessment_end_day instanceof DateTimeImmutable) {
+        $assessment_start = $assessment_end_day->setTime(0, 0, 0);
+    }
+    if ($assessment_start instanceof DateTimeImmutable && $assessment_end instanceof DateTimeImmutable && $assessment_end < $assessment_start) {
+        $assessment_end = $assessment_start->setTime(23, 59, 59);
+    }
 
     $stage_seed = array(
         array(
@@ -1459,6 +2206,9 @@ function itstudio_join_get_runtime_data() {
             'start' => $registration_start,
             'end' => $registration_end,
             'all_day' => true,
+            'location_cn' => '',
+            'location_en' => '',
+            'result_uploaded' => itstudio_join_has_uploaded_result_for_stage($settings, 'registration'),
         ),
         array(
             'key' => 'first_interview',
@@ -1468,7 +2218,10 @@ function itstudio_join_get_runtime_data() {
             'short_en' => 'I-1',
             'start' => $first_interview_start,
             'end' => $first_interview_end,
-            'all_day' => true,
+            'all_day' => false,
+            'location_cn' => $first_interview_location_cn,
+            'location_en' => $first_interview_location_en,
+            'result_uploaded' => itstudio_join_has_uploaded_result_for_stage($settings, 'first_interview'),
         ),
         array(
             'key' => 'assessment',
@@ -1479,6 +2232,9 @@ function itstudio_join_get_runtime_data() {
             'start' => $assessment_start,
             'end' => $assessment_end,
             'all_day' => true,
+            'location_cn' => '',
+            'location_en' => '',
+            'result_uploaded' => itstudio_join_has_uploaded_result_for_stage($settings, 'assessment'),
         ),
         array(
             'key' => 'second_interview',
@@ -1488,17 +2244,23 @@ function itstudio_join_get_runtime_data() {
             'short_en' => 'I-2',
             'start' => $second_interview_start,
             'end' => $second_interview_end,
-            'all_day' => true,
+            'all_day' => false,
+            'location_cn' => $second_interview_location_cn,
+            'location_en' => $second_interview_location_en,
+            'result_uploaded' => itstudio_join_has_uploaded_result_for_stage($settings, 'second_interview'),
         ),
         array(
             'key' => 'public_notice',
-            'label_cn' => '录取结果公示',
+            'label_cn' => '录取结果公布',
             'label_en' => 'Public Notice',
-            'short_cn' => '公示',
+            'short_cn' => '公布',
             'short_en' => 'Notice',
             'start' => $notice_start,
             'end' => $notice_end,
             'all_day' => true,
+            'location_cn' => '',
+            'location_en' => '',
+            'result_uploaded' => itstudio_join_has_uploaded_result_for_stage($settings, 'public_notice'),
         ),
     );
 
@@ -1515,6 +2277,9 @@ function itstudio_join_get_runtime_data() {
             'status' => $status,
             'range_cn' => $range['cn'],
             'range_en' => $range['en'],
+            'location_cn' => isset($stage['location_cn']) ? (string) $stage['location_cn'] : '',
+            'location_en' => isset($stage['location_en']) ? (string) $stage['location_en'] : '',
+            'result_uploaded' => !empty($stage['result_uploaded']),
             'start_ts' => itstudio_join_datetime_to_ms($stage['start']),
             'end_ts' => itstudio_join_datetime_to_ms($stage['end']),
         );
@@ -1528,8 +2293,28 @@ function itstudio_join_get_runtime_data() {
         }
     }
 
-    $current_stage = ($current_stage_index >= 0 && isset($stages[$current_stage_index]))
-        ? $stages[$current_stage_index]
+    $next_stage_index = -1;
+    if ($current_stage_index < 0) {
+        foreach ($stages as $index => $stage) {
+            if (($stage['status'] ?? '') === 'upcoming') {
+                $next_stage_index = (int) $index;
+                break;
+            }
+        }
+    }
+
+    $current_stage_mode = 'inactive';
+    $display_stage_index = -1;
+    if ($current_stage_index >= 0 && isset($stages[$current_stage_index])) {
+        $display_stage_index = $current_stage_index;
+        $current_stage_mode = 'active';
+    } elseif ($next_stage_index >= 0 && isset($stages[$next_stage_index])) {
+        $display_stage_index = $next_stage_index;
+        $current_stage_mode = 'next';
+    }
+
+    $current_stage = ($display_stage_index >= 0 && isset($stages[$display_stage_index]))
+        ? $stages[$display_stage_index]
         : array(
             'key' => 'inactive',
             'label_cn' => '当前未在招新时段',
@@ -1539,6 +2324,9 @@ function itstudio_join_get_runtime_data() {
             'status' => 'inactive',
             'range_cn' => '请关注后续通知',
             'range_en' => 'Please check later updates',
+            'location_cn' => '',
+            'location_en' => '',
+            'result_uploaded' => false,
             'start_ts' => null,
             'end_ts' => null,
         );
@@ -1560,6 +2348,36 @@ function itstudio_join_get_runtime_data() {
         $current_stage_photo_url = get_template_directory_uri() . '/resources/it_logo_2024.svg';
     }
 
+    $season_start = null;
+    $season_end = null;
+    foreach ($stage_seed as $stage_window) {
+        $stage_start = $stage_window['start'] instanceof DateTimeImmutable ? $stage_window['start'] : null;
+        $stage_end = $stage_window['end'] instanceof DateTimeImmutable ? $stage_window['end'] : null;
+        if (!($stage_start instanceof DateTimeImmutable) && !($stage_end instanceof DateTimeImmutable)) {
+            continue;
+        }
+
+        $window_start = $stage_start instanceof DateTimeImmutable ? $stage_start : $stage_end;
+        $window_end = $stage_end instanceof DateTimeImmutable ? $stage_end : $stage_start;
+        if (!($window_start instanceof DateTimeImmutable) || !($window_end instanceof DateTimeImmutable)) {
+            continue;
+        }
+
+        if (!($season_start instanceof DateTimeImmutable) || $window_start < $season_start) {
+            $season_start = $window_start;
+        }
+        if (!($season_end instanceof DateTimeImmutable) || $window_end > $season_end) {
+            $season_end = $window_end;
+        }
+    }
+
+    $show_progress_visual = false;
+    if ($season_start instanceof DateTimeImmutable && $season_end instanceof DateTimeImmutable) {
+        $show_progress_visual = ($now >= $season_start && $now <= $season_end);
+    } elseif ($current_stage_index >= 0) {
+        $show_progress_visual = true;
+    }
+
     $cached = array(
         'settings' => $settings,
         'timezone' => $timezone->getName(),
@@ -1567,10 +2385,12 @@ function itstudio_join_get_runtime_data() {
         'now_ts' => (int) $now->format('U') * 1000,
         'stages' => $stages,
         'current_stage_index' => $current_stage_index,
+        'current_stage_mode' => $current_stage_mode,
         'current_stage' => $current_stage,
         'is_registration_open' => $is_registration_open,
         'is_query_open' => $is_query_open,
         'is_notice_open' => $is_notice_open,
+        'show_progress_visual' => $show_progress_visual,
         'current_stage_photo_url' => $current_stage_photo_url,
         'query_deadline_cn' => $notice_end instanceof DateTimeImmutable ? $notice_end->format('Y-m-d H:i') : '',
         'query_deadline_en' => $notice_end instanceof DateTimeImmutable ? $notice_end->format('M j, Y H:i') : '',
@@ -1594,6 +2414,9 @@ function itstudio_join_get_frontend_payload() {
                 'status' => (string) ($stage['status'] ?? 'pending'),
                 'rangeCn' => (string) ($stage['range_cn'] ?? ''),
                 'rangeEn' => (string) ($stage['range_en'] ?? ''),
+                'locationCn' => (string) ($stage['location_cn'] ?? ''),
+                'locationEn' => (string) ($stage['location_en'] ?? ''),
+                'resultUploaded' => !empty($stage['result_uploaded']),
                 'startTs' => isset($stage['start_ts']) ? $stage['start_ts'] : null,
                 'endTs' => isset($stage['end_ts']) ? $stage['end_ts'] : null,
             );
@@ -1675,6 +2498,29 @@ function itstudio_join_render_photo_field_row($field_key, $label, $settings) {
     <?php
 }
 
+function itstudio_join_render_result_records_row($field_key, $label, $settings, $description = '') {
+    $value = isset($settings[$field_key]) ? (string) $settings[$field_key] : '';
+    ?>
+    <tr>
+        <th scope="row"><label for="<?php echo esc_attr('itstudio_join_' . $field_key); ?>"><?php echo esc_html($label); ?></label></th>
+        <td>
+            <textarea
+                id="<?php echo esc_attr('itstudio_join_' . $field_key); ?>"
+                name="itstudio_join_settings[<?php echo esc_attr($field_key); ?>]"
+                rows="6"
+                class="large-text code"
+                placeholder="姓名,QQ,邮箱,学号"
+            ><?php echo esc_textarea($value); ?></textarea>
+            <?php if ($description !== '') : ?>
+                <p class="description"><?php echo esc_html($description); ?></p>
+            <?php else : ?>
+                <p class="description">每行一条记录，格式：姓名,QQ,邮箱,学号。可用逗号、中文逗号、竖线或 Tab 分隔。</p>
+            <?php endif; ?>
+        </td>
+    </tr>
+    <?php
+}
+
 function itstudio_join_render_settings_page() {
     if (!current_user_can('manage_options')) {
         return;
@@ -1689,11 +2535,11 @@ function itstudio_join_render_settings_page() {
     ?>
     <div class="wrap">
         <h1>爱特工作室招新设置</h1>
-        <p>用于配置「加入我们」页面的时间节点、表单和公示视图。</p>
+        <p>用于配置「加入我们」页面的时间节点、阶段结果和表单。</p>
 
         <?php if (!$formidable_active) : ?>
             <div class="notice notice-warning inline">
-                <p><strong>提示：</strong>未检测到 Formidable Forms 插件。报名表单、查询表单、公示视图将无法在前台渲染。</p>
+                <p><strong>提示：</strong>未检测到 Formidable Forms 插件。报名表单将无法在前台渲染。</p>
             </div>
         <?php endif; ?>
 
@@ -1709,59 +2555,100 @@ function itstudio_join_render_settings_page() {
                 <tr>
                     <th scope="row"><label for="itstudio_join_registration_start">报名开始时间</label></th>
                     <td>
-                        <input type="datetime-local" id="itstudio_join_registration_start" name="itstudio_join_settings[registration_start]" value="<?php echo esc_attr((string) $settings['registration_start']); ?>" class="regular-text">
+                        <input type="datetime-local" id="itstudio_join_registration_start" name="itstudio_join_settings[registration_start]" value="<?php echo esc_attr(itstudio_join_to_datetime_local_input_value((string) $settings['registration_start'], false)); ?>" class="regular-text">
                     </td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="itstudio_join_registration_end">报名结束时间</label></th>
                     <td>
-                        <input type="datetime-local" id="itstudio_join_registration_end" name="itstudio_join_settings[registration_end]" value="<?php echo esc_attr((string) $settings['registration_end']); ?>" class="regular-text">
+                        <input type="datetime-local" id="itstudio_join_registration_end" name="itstudio_join_settings[registration_end]" value="<?php echo esc_attr(itstudio_join_to_datetime_local_input_value((string) $settings['registration_end'], true)); ?>" class="regular-text">
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="itstudio_join_first_interview_date">第一次面试日期</label></th>
+                    <th scope="row"><label for="itstudio_join_first_interview_date">第一次面试开始时间</label></th>
                     <td>
-                        <input type="date" id="itstudio_join_first_interview_date" name="itstudio_join_settings[first_interview_date]" value="<?php echo esc_attr((string) $settings['first_interview_date']); ?>" class="regular-text">
+                        <input type="datetime-local" id="itstudio_join_first_interview_date" name="itstudio_join_settings[first_interview_date]" value="<?php echo esc_attr(itstudio_join_to_datetime_local_input_value((string) $settings['first_interview_date'], false)); ?>" class="regular-text">
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="itstudio_join_second_interview_date">第二次面试日期</label></th>
+                    <th scope="row"><label for="itstudio_join_first_interview_end">第一次面试结束时间</label></th>
                     <td>
-                        <input type="date" id="itstudio_join_second_interview_date" name="itstudio_join_settings[second_interview_date]" value="<?php echo esc_attr((string) $settings['second_interview_date']); ?>" class="regular-text">
+                        <input type="datetime-local" id="itstudio_join_first_interview_end" name="itstudio_join_settings[first_interview_end]" value="<?php echo esc_attr(itstudio_join_to_datetime_local_input_value((string) $settings['first_interview_end'], true)); ?>" class="regular-text">
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="itstudio_join_notice_start_date">录取公示开始日期</label></th>
+                    <th scope="row"><label for="itstudio_join_first_interview_location_cn">第一次面试地点（中文）</label></th>
                     <td>
-                        <input type="date" id="itstudio_join_notice_start_date" name="itstudio_join_settings[notice_start_date]" value="<?php echo esc_attr((string) $settings['notice_start_date']); ?>" class="regular-text">
-                        <p class="description">公示会自动持续 7 天（开始日 + 后续 6 天）。</p>
+                        <input type="text" id="itstudio_join_first_interview_location_cn" name="itstudio_join_settings[first_interview_location_cn]" value="<?php echo esc_attr((string) ($settings['first_interview_location_cn'] ?? '')); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_first_interview_location_en">第一次面试地点（英文）</label></th>
+                    <td>
+                        <input type="text" id="itstudio_join_first_interview_location_en" name="itstudio_join_settings[first_interview_location_en]" value="<?php echo esc_attr((string) ($settings['first_interview_location_en'] ?? '')); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_second_interview_date">第二次面试开始时间</label></th>
+                    <td>
+                        <input type="datetime-local" id="itstudio_join_second_interview_date" name="itstudio_join_settings[second_interview_date]" value="<?php echo esc_attr(itstudio_join_to_datetime_local_input_value((string) $settings['second_interview_date'], false)); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_second_interview_end">第二次面试结束时间</label></th>
+                    <td>
+                        <input type="datetime-local" id="itstudio_join_second_interview_end" name="itstudio_join_settings[second_interview_end]" value="<?php echo esc_attr(itstudio_join_to_datetime_local_input_value((string) $settings['second_interview_end'], true)); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_second_interview_location_cn">第二次面试地点（中文）</label></th>
+                    <td>
+                        <input type="text" id="itstudio_join_second_interview_location_cn" name="itstudio_join_settings[second_interview_location_cn]" value="<?php echo esc_attr((string) ($settings['second_interview_location_cn'] ?? '')); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_second_interview_location_en">第二次面试地点（英文）</label></th>
+                    <td>
+                        <input type="text" id="itstudio_join_second_interview_location_en" name="itstudio_join_settings[second_interview_location_en]" value="<?php echo esc_attr((string) ($settings['second_interview_location_en'] ?? '')); ?>" class="regular-text">
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_assessment_start_date">国庆能力摸底开始日期（调试）</label></th>
+                    <td>
+                        <input type="date" id="itstudio_join_assessment_start_date" name="itstudio_join_settings[assessment_start_date]" value="<?php echo esc_attr(itstudio_join_to_date_input_value((string) ($settings['assessment_start_date'] ?? ''))); ?>" class="regular-text">
+                        <p class="description">留空时默认使用每年 10 月 1 日。</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_assessment_end_date">国庆能力摸底结束日期（调试）</label></th>
+                    <td>
+                        <input type="date" id="itstudio_join_assessment_end_date" name="itstudio_join_settings[assessment_end_date]" value="<?php echo esc_attr(itstudio_join_to_date_input_value((string) ($settings['assessment_end_date'] ?? ''))); ?>" class="regular-text">
+                        <p class="description">留空时默认使用每年 10 月 7 日。</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="itstudio_join_notice_start_date">录取结果公布开始日期</label></th>
+                    <td>
+                        <input type="date" id="itstudio_join_notice_start_date" name="itstudio_join_settings[notice_start_date]" value="<?php echo esc_attr(itstudio_join_to_date_input_value((string) $settings['notice_start_date'])); ?>" class="regular-text">
+                        <p class="description">公布会自动持续 7 天（开始日 + 后续 6 天）。</p>
                     </td>
                 </tr>
                 <?php itstudio_join_render_photo_field_row('photo_registration', '报名阶段图片', $settings); ?>
                 <?php itstudio_join_render_photo_field_row('photo_first_interview', '第一次面试图片', $settings); ?>
                 <?php itstudio_join_render_photo_field_row('photo_assessment', '国庆能力摸底图片', $settings); ?>
                 <?php itstudio_join_render_photo_field_row('photo_second_interview', '第二次面试图片', $settings); ?>
-                <?php itstudio_join_render_photo_field_row('photo_public_notice', '录取公示阶段图片', $settings); ?>
+                <?php itstudio_join_render_photo_field_row('photo_public_notice', '录取结果公布阶段图片', $settings); ?>
                 <?php itstudio_join_render_photo_field_row('photo_inactive', '非招新时段图片', $settings); ?>
+                <?php itstudio_join_render_result_records_row('result_registration_records', '报名阶段结果（已报名名单）', $settings, '用于“报名阶段查询”：匹配到即显示“已报名”，否则显示“未报名”。'); ?>
+                <?php itstudio_join_render_result_records_row('result_first_interview_records', '第一次面试结果（通过名单）', $settings, '用于“一面结束后查询”：在名单内显示“已通过第一次面试”，否则显示未通过。'); ?>
+                <?php itstudio_join_render_result_records_row('result_assessment_records', '国庆能力摸底结果（通过名单）', $settings, '用于“摸底结束后查询”：在名单内显示“已通过国庆能力摸底”，否则显示未通过。'); ?>
+                <?php itstudio_join_render_result_records_row('result_second_interview_records', '第二次面试结果（通过名单）', $settings, '用于“二面结束后查询”：在名单内显示“已通过第二次面试”，否则显示未通过。'); ?>
+                <?php itstudio_join_render_result_records_row('result_admission_records', '录取结果（录取名单）', $settings, '用于“录取结果公布阶段查询”：在名单内显示“已录取”，否则显示未录取。'); ?>
                 <tr>
                     <th scope="row"><label for="itstudio_join_signup_shortcode">报名表单 Shortcode</label></th>
                     <td>
                         <input type="text" id="itstudio_join_signup_shortcode" name="itstudio_join_settings[signup_form_shortcode]" value="<?php echo esc_attr((string) $settings['signup_form_shortcode']); ?>" class="regular-text code">
                         <p class="description">示例：<code>[formidable id="12"]</code></p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><label for="itstudio_join_query_shortcode">结果查询 Shortcode</label></th>
-                    <td>
-                        <input type="text" id="itstudio_join_query_shortcode" name="itstudio_join_settings[query_form_shortcode]" value="<?php echo esc_attr((string) $settings['query_form_shortcode']); ?>" class="regular-text code">
-                        <p class="description">示例：<code>[formidable id="13"]</code></p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><label for="itstudio_join_notice_shortcode">公示视图 Shortcode</label></th>
-                    <td>
-                        <input type="text" id="itstudio_join_notice_shortcode" name="itstudio_join_settings[notice_view_shortcode]" value="<?php echo esc_attr((string) $settings['notice_view_shortcode']); ?>" class="regular-text code">
-                        <p class="description">示例：<code>[display-frm-data id="5"]</code></p>
                     </td>
                 </tr>
             </table>
@@ -1770,7 +2657,7 @@ function itstudio_join_render_settings_page() {
 
         <hr>
         <h2>阶段预览</h2>
-        <p>国庆能力摸底阶段固定为每年 10 月 1 日至 10 月 7 日，年份自动取报名开始年份（未配置则取公示开始年份，再否则取当前年份）。</p>
+        <p>国庆能力摸底默认固定为每年 10 月 1 日至 10 月 7 日；如填写上方“摸底开始/结束日期（调试）”则优先使用调试时间，留空则恢复默认固定窗口。</p>
         <table class="widefat striped">
             <thead>
                 <tr>

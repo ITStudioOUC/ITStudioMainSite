@@ -16,6 +16,8 @@
   const waveFill = document.getElementById('joinWaveFill');
   const waveBoat = document.getElementById('joinWaveBoat');
   const waveMarks = document.getElementById('joinWaveMarks');
+  const waveProgress = waveTrack ? waveTrack.closest('.join-wave-progress') : null;
+  const overlayPanel = document.querySelector('.join-canvas-overlay');
   const joinData = window.itstudioJoinData && typeof window.itstudioJoinData === 'object'
     ? window.itstudioJoinData
     : {};
@@ -31,21 +33,24 @@
   let trackLeft = 0;
   let trackWidth = 0;
   let stageMarkers = [];
+  let stageLayout = null;
 
   const waveShape1 = { base: 0.16, amp: 7.5, len: 280, speed: 0.9 };
   const waveShape2 = { base: 0.44, amp: 6, len: 340, speed: 0.75 };
   const waveShape3 = { base: 0.68, amp: 6.5, len: 400, speed: 0.62 };
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const ONE_DAY_STAGE_WEIGHT_MS = DAY_MS * 1.8;
 
   const palettes = {
     light: {
-      wave1: 'rgba(198, 227, 255, 0.92)',
-      wave2: 'rgba(142, 193, 236, 0.4)',
-      wave3: 'rgba(84, 151, 214, 0.48)',
+      wave1: 'rgba(122, 178, 230, 0.95)',
+      wave2: 'rgba(73, 134, 197, 0.72)',
+      wave3: 'rgba(40, 96, 161, 0.78)',
     },
     dark: {
-      wave1: 'rgba(132, 190, 242, 0.88)',
-      wave2: 'rgba(88, 151, 214, 0.4)',
-      wave3: 'rgba(56, 118, 183, 0.48)',
+      wave1: 'rgba(86, 146, 214, 0.92)',
+      wave2: 'rgba(49, 104, 172, 0.78)',
+      wave3: 'rgba(27, 73, 136, 0.82)',
     },
   };
 
@@ -60,6 +65,61 @@
   function getNumber(value) {
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  function getStages() {
+    return Array.isArray(joinData.stages) ? joinData.stages : [];
+  }
+
+  function getStageDurationMs(stage) {
+    const start = getNumber(stage ? stage.startTs : null);
+    const end = getNumber(stage ? stage.endTs : null);
+    if (start === null || end === null) {
+      return null;
+    }
+    return Math.max(0, end - start);
+  }
+
+  function getEffectiveStageWeightMs(stage) {
+    const duration = getStageDurationMs(stage);
+    if (duration === null) {
+      return ONE_DAY_STAGE_WEIGHT_MS;
+    }
+    if (duration <= DAY_MS) {
+      return ONE_DAY_STAGE_WEIGHT_MS;
+    }
+    return duration;
+  }
+
+  function buildStageLayout(stages) {
+    if (!stages.length) {
+      return {
+        markerByIndex: [],
+        endByIndex: [],
+      };
+    }
+
+    const weights = stages.map((stage) => getEffectiveStageWeightMs(stage));
+    const totalWeight = Math.max(1, weights.reduce((sum, w) => sum + w, 0));
+    const markerByIndex = [];
+    const endByIndex = [];
+    let cumulative = 0;
+
+    for (let i = 0; i < stages.length; i += 1) {
+      markerByIndex[i] = clamp(cumulative / totalWeight, 0, 1);
+      cumulative += weights[i];
+      endByIndex[i] = clamp(cumulative / totalWeight, 0, 1);
+    }
+
+    endByIndex[endByIndex.length - 1] = 1;
+    return { markerByIndex, endByIndex };
+  }
+
+  function getStageLayout(stages) {
+    if (!stageLayout || !stageLayout.markerByIndex || stageLayout.markerByIndex.length !== stages.length) {
+      stageLayout = buildStageLayout(stages);
+    }
+    return stageLayout;
   }
 
   function getNavigationType() {
@@ -88,6 +148,21 @@
     }
 
     return getNavigationType() !== 'reload';
+  }
+
+  function setupOverlayEntryAnimation() {
+    if (!overlayPanel) {
+      return;
+    }
+
+    overlayPanel.classList.remove('is-enter-animate');
+    if (!shouldAnimateEntry()) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      overlayPanel.classList.add('is-enter-animate');
+    });
   }
 
   function resize() {
@@ -212,20 +287,34 @@
   }
 
   function computeTargetProgress() {
-    const stages = Array.isArray(joinData.stages) ? joinData.stages : [];
+    const stages = getStages();
     if (!stages.length) {
       return 0;
     }
 
-    const denominator = stages.length > 1 ? (stages.length - 1) : 1;
+    const layout = getStageLayout(stages);
+    const markerByIndex = layout.markerByIndex;
+    const endByIndex = layout.endByIndex;
     const currentIndex = getNumber(joinData.currentStageIndex);
+    const nowTs = getNumber(joinData.nowTs) || Date.now();
 
-    // 有进行中阶段时，船严格对齐对应浮标节点。
-    if (currentIndex !== null && currentIndex >= 0) {
-      return clamp(currentIndex / denominator, 0, 1);
+    // 有进行中阶段时，在该阶段对应区间内按时间连续推进。
+    if (currentIndex !== null && currentIndex >= 0 && currentIndex < stages.length) {
+      const stage = stages[currentIndex];
+      const startProgress = getNumber(markerByIndex[currentIndex]) ?? 0;
+      const endProgress = getNumber(endByIndex[currentIndex]) ?? startProgress;
+      const startTs = getNumber(stage ? stage.startTs : null);
+      const endTs = getNumber(stage ? stage.endTs : null);
+
+      if (startTs !== null && endTs !== null && endTs > startTs) {
+        const ratio = clamp((nowTs - startTs) / (endTs - startTs), 0, 1);
+        return clamp(startProgress + ((endProgress - startProgress) * ratio), 0, 1);
+      }
+
+      return clamp(startProgress, 0, 1);
     }
 
-    // 无进行中阶段时，停在最近已完成阶段节点。
+    // 无进行中阶段时，停在最近已完成阶段的末端。
     let lastCompletedIndex = -1;
     for (let i = 0; i < stages.length; i += 1) {
       if (stages[i] && stages[i].status === 'completed') {
@@ -233,8 +322,41 @@
       }
     }
 
+    // 阶段空档期：在“上一阶段浮标”和“下一阶段浮标”之间按时间线性推进。
     if (lastCompletedIndex >= 0) {
-      return clamp(lastCompletedIndex / denominator, 0, 1);
+      let nextUpcomingIndex = -1;
+      for (let i = lastCompletedIndex + 1; i < stages.length; i += 1) {
+        if (stages[i] && stages[i].status === 'upcoming') {
+          nextUpcomingIndex = i;
+          break;
+        }
+      }
+
+      if (nextUpcomingIndex >= 0) {
+        const completedStage = stages[lastCompletedIndex];
+        const upcomingStage = stages[nextUpcomingIndex];
+        const gapStartTs = getNumber(completedStage ? completedStage.endTs : null);
+        const gapEndTs = getNumber(upcomingStage ? upcomingStage.startTs : null);
+        const fromProgress = clamp(getNumber(markerByIndex[lastCompletedIndex]) ?? 0, 0, 1);
+        const toProgress = clamp(getNumber(markerByIndex[nextUpcomingIndex]) ?? fromProgress, 0, 1);
+
+        if (gapStartTs !== null && gapEndTs !== null && gapEndTs > gapStartTs && nowTs > gapStartTs && nowTs < gapEndTs) {
+          const gapRatio = clamp((nowTs - gapStartTs) / (gapEndTs - gapStartTs), 0, 1);
+          return clamp(fromProgress + ((toProgress - fromProgress) * gapRatio), 0, 1);
+        }
+
+        if (nowTs <= gapStartTs) {
+          return fromProgress;
+        }
+
+        if (nowTs < gapEndTs) {
+          return clamp((fromProgress + toProgress) * 0.5, 0, 1);
+        }
+      }
+    }
+
+    if (lastCompletedIndex >= 0) {
+      return clamp(getNumber(endByIndex[lastCompletedIndex]) ?? 0, 0, 1);
     }
 
     return 0;
@@ -275,23 +397,29 @@
 
     stageMarkers = [];
     waveMarks.innerHTML = '';
+    if (waveProgress) {
+      waveProgress.querySelectorAll('.join-wave-mark.is-lighthouse.is-docked').forEach((node) => node.remove());
+    }
 
-    const stages = Array.isArray(joinData.stages) ? joinData.stages : [];
+    const stages = getStages();
     if (!stages.length) {
       return;
     }
+    const layout = getStageLayout(stages);
+    const markerByIndex = layout.markerByIndex;
 
     const currentIndex = getNumber(joinData.currentStageIndex);
     const safeCurrentIndex = currentIndex === null ? -1 : Math.round(currentIndex);
-    const denominator = stages.length > 1 ? (stages.length - 1) : 1;
 
     stages.forEach((stage, index) => {
       const marker = document.createElement('span');
       marker.className = 'join-wave-mark';
-      const progress = denominator > 0 ? (index / denominator) : 0;
-      marker.style.left = `${(progress * 100).toFixed(3)}%`;
 
       const isLighthouse = index === stages.length - 1 || (stage && stage.key === 'public_notice');
+      const progress = isLighthouse
+        ? 1
+        : clamp(getNumber(markerByIndex[index]) ?? 0, 0, 1);
+
       marker.classList.add(isLighthouse ? 'is-lighthouse' : 'is-buoy');
       if (index === safeCurrentIndex) {
         marker.classList.add('is-active');
@@ -304,7 +432,15 @@
 
       const beams = isLighthouse ? Array.from(icon.querySelectorAll('.marker-lh-beam')) : [];
 
-      waveMarks.appendChild(marker);
+      if (isLighthouse && waveProgress) {
+        marker.classList.add('is-docked');
+        marker.style.right = '';
+        marker.style.left = 'calc(100% - clamp(18px, 2.2vw, 30px))';
+        waveProgress.appendChild(marker);
+      } else {
+        marker.style.left = `${(progress * 100).toFixed(3)}%`;
+        waveMarks.appendChild(marker);
+      }
       stageMarkers.push({
         element: marker,
         icon,
@@ -490,6 +626,7 @@
   });
 
   targetProgress = computeTargetProgress();
+  setupOverlayEntryAnimation();
   renderStageMarks();
   startWaves();
   animateBoatToTarget();
