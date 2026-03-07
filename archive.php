@@ -10,8 +10,6 @@ $is_itstudio_content_page = $is_itstudio_news_page || $is_itstudio_notice_page;
 <?php if ($is_itstudio_content_page) : ?>
 <?php
 $keyword = isset($_GET['q']) ? sanitize_text_field(wp_unslash($_GET['q'])) : '';
-$date_from = isset($_GET['date_from']) ? sanitize_text_field(wp_unslash($_GET['date_from'])) : '';
-$date_to = isset($_GET['date_to']) ? sanitize_text_field(wp_unslash($_GET['date_to'])) : '';
 $tag_slug = isset($_GET['tag']) ? sanitize_title(wp_unslash($_GET['tag'])) : '';
 $paged = max(1, (int) get_query_var('paged'), (int) get_query_var('page'));
 $active_post_type = $is_itstudio_news_page ? 'news' : 'announcement';
@@ -28,29 +26,6 @@ $empty_cn = $is_itstudio_news_page ? '暂无新闻' : '暂无公告';
 $empty_en = $is_itstudio_news_page ? 'No news found.' : 'No announcements found.';
 $side_title_cn = $is_itstudio_news_page ? '要闻' : '重要公告';
 $side_title_en = $is_itstudio_news_page ? 'Top Stories' : 'Important Announcements';
-
-$date_query = array();
-$date_from_valid = '';
-$date_to_valid = '';
-if ($date_from !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_from)) {
-    $date_from_valid = $date_from . ' 00:00:00';
-}
-if ($date_to !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to)) {
-    $date_to_valid = $date_to . ' 23:59:59';
-}
-if ($date_from_valid !== '' || $date_to_valid !== '') {
-    $range = array(
-        'inclusive' => true,
-        'column' => 'post_date',
-    );
-    if ($date_from_valid !== '') {
-        $range['after'] = $date_from_valid;
-    }
-    if ($date_to_valid !== '') {
-        $range['before'] = $date_to_valid;
-    }
-    $date_query[] = $range;
-}
 
 if ($tag_slug !== '') {
     $resolved_tag = get_term_by('slug', $tag_slug, 'post_tag');
@@ -82,9 +57,6 @@ $list_query_args = array(
 if ($keyword !== '') {
     $list_query_args['itstudio_archive_extend_search'] = true;
     $list_query_args['itstudio_archive_keyword'] = $keyword;
-}
-if (!empty($date_query)) {
-    $list_query_args['date_query'] = $date_query;
 }
 if ($tag_slug !== '') {
     $list_query_args['tax_query'] = array(
@@ -137,55 +109,34 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
         </header>
 
         <div class="news-archive-tools">
-            <form class="news-archive-filter-form" method="get" action="<?php echo esc_url($archive_url); ?>">
-                <?php if ($keyword !== '') : ?>
-                    <input type="hidden" name="q" value="<?php echo esc_attr($keyword); ?>">
-                <?php endif; ?>
-                <div class="news-archive-filter-fields">
-                    <label class="news-archive-filter-field">
-                        <span data-cn="&#21457;&#24067;&#26102;&#38388;&#36215;" data-en="From">&#21457;&#24067;&#26102;&#38388;&#36215;</span>
-                        <input type="date" name="date_from" value="<?php echo esc_attr($date_from); ?>">
-                    </label>
-                    <label class="news-archive-filter-field">
-                        <span data-cn="&#21457;&#24067;&#26102;&#38388;&#27490;" data-en="To">&#21457;&#24067;&#26102;&#38388;&#27490;</span>
-                        <input type="date" name="date_to" value="<?php echo esc_attr($date_to); ?>">
-                    </label>
-                    <label class="news-archive-filter-field news-archive-filter-tag">
-                        <span data-cn="&#26631;&#31614;" data-en="Tag">&#26631;&#31614;</span>
-                        <select name="tag">
-                            <option value="" data-cn="&#20840;&#37096;&#26631;&#31614;" data-en="All tags">&#20840;&#37096;&#26631;&#31614;</option>
-                            <?php foreach ($available_tags as $tag_option) : ?>
-                                <option value="<?php echo esc_attr($tag_option->slug); ?>" <?php selected($tag_slug, $tag_option->slug); ?>>
-                                    <?php echo esc_html($tag_option->name); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                </div>
-                <button type="submit" data-cn="&#31579;&#36873;" data-en="Apply">&#31579;&#36873;</button>
-            </form>
-
             <form class="news-archive-search" method="get" action="<?php echo esc_url($archive_url); ?>">
-                <?php if ($date_from !== '') : ?>
-                    <input type="hidden" name="date_from" value="<?php echo esc_attr($date_from); ?>">
-                <?php endif; ?>
-                <?php if ($date_to !== '') : ?>
-                    <input type="hidden" name="date_to" value="<?php echo esc_attr($date_to); ?>">
-                <?php endif; ?>
-                <?php if ($tag_slug !== '') : ?>
-                    <input type="hidden" name="tag" value="<?php echo esc_attr($tag_slug); ?>">
-                <?php endif; ?>
-                <input
-                    type="search"
-                    name="q"
-                    value="<?php echo esc_attr($keyword); ?>"
-                    placeholder="<?php esc_attr_e('Search title or author...', 'itstudio'); ?>"
-                    aria-label="<?php esc_attr_e('Search title or author', 'itstudio'); ?>"
-                    data-cn-placeholder="搜索文章或发布者..."
-                    data-en-placeholder="Search title or author..."
-                    data-cn-aria-label="搜索文章或发布者"
-                    data-en-aria-label="Search title or author"
-                >
+                <div class="news-archive-search-controls">
+                    <input
+                        type="search"
+                        name="q"
+                        value="<?php echo esc_attr($keyword); ?>"
+                        placeholder="<?php esc_attr_e('Search title or author...', 'itstudio'); ?>"
+                        aria-label="<?php esc_attr_e('Search title or author', 'itstudio'); ?>"
+                        data-cn-placeholder="搜索文章或发布者..."
+                        data-en-placeholder="Search title or author..."
+                        data-cn-aria-label="搜索文章或发布者"
+                        data-en-aria-label="Search title or author"
+                    >
+                    <select
+                        name="tag"
+                        class="news-archive-search-tag"
+                        aria-label="<?php esc_attr_e('Filter by tag', 'itstudio'); ?>"
+                        data-cn-aria-label="按标签筛选"
+                        data-en-aria-label="Filter by tag"
+                    >
+                        <option value="" data-cn="全部标签" data-en="All tags">全部标签</option>
+                        <?php foreach ($available_tags as $tag_option) : ?>
+                            <option value="<?php echo esc_attr($tag_option->slug); ?>" <?php selected($tag_slug, $tag_option->slug); ?>>
+                                <?php echo esc_html($tag_option->name); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <button type="submit" data-cn="搜索" data-en="Search">搜索</button>
             </form>
         </div>
@@ -279,8 +230,6 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                 'add_args' => array_filter(
                                     array(
                                         'q' => $keyword,
-                                        'date_from' => $date_from,
-                                        'date_to' => $date_to,
                                         'tag' => $tag_slug,
                                     ),
                                     static function ($value) {
@@ -412,4 +361,3 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
 <?php endif; ?>
 
 <?php get_footer(); ?>
-
