@@ -152,6 +152,43 @@ function itstudio_enqueue_scripts() {
 }
 add_action('wp_enqueue_scripts', 'itstudio_enqueue_scripts');
 
+function itstudio_expand_news_notice_date_precision($the_date, $format, $post) {
+    $post_obj = $post instanceof WP_Post ? $post : get_post($post);
+    if (!($post_obj instanceof WP_Post)) {
+        return $the_date;
+    }
+
+    if (!in_array((string) $post_obj->post_type, array('announcement', 'news'), true)) {
+        return $the_date;
+    }
+
+    $format = (string) $format;
+    if ($format === '') {
+        $format = (string) get_option('date_format');
+    }
+
+    $lower = strtolower($format);
+    if (in_array($lower, array('c', 'r', 'u'), true)) {
+        return $the_date;
+    }
+
+    // Already has time precision.
+    if (preg_match('/[HhGgis]/', $format)) {
+        return $the_date;
+    }
+
+    $timestamp = function_exists('get_post_timestamp')
+        ? get_post_timestamp($post_obj, 'date')
+        : false;
+    if (!$timestamp) {
+        return $the_date;
+    }
+
+    $format_with_time = rtrim($format) . ' H:i';
+    return wp_date($format_with_time, (int) $timestamp, wp_timezone());
+}
+add_filter('get_the_date', 'itstudio_expand_news_notice_date_precision', 10, 3);
+
 function itstudio_register_sidebars() {
     register_sidebar(array(
         'name' => __('Footer - Column 1', 'itstudio'),
@@ -572,12 +609,20 @@ function itstudio_join_get_recruitment_feed_items($join_runtime = array(), $limi
                 $excerpt = '...';
             }
 
+            $author_id = (int) get_post_field('post_author', $post_id);
+            $author = trim((string) get_the_author_meta('display_name', $author_id));
+            if ($author === '') {
+                $author = 'Unknown';
+            }
+
             $items[] = array(
                 'id' => $post_id,
                 'title' => $title,
                 'excerpt' => $excerpt,
                 'url' => $url,
-                'date' => get_the_date('Y-m-d', $post_id),
+                'date' => get_the_date('Y-m-d H:i', $post_id),
+                'date_iso' => get_the_date('c', $post_id),
+                'author' => $author,
                 'type' => get_post_type($post_id),
             );
         }
@@ -2293,6 +2338,55 @@ function itstudio_join_normalize_lookup_value($field, $value) {
     return strtolower($value);
 }
 
+function itstudio_join_detect_progress_query_identity($raw_identity) {
+    $raw_identity = trim((string) $raw_identity);
+    $compacted = preg_replace('/\s+/u', '', $raw_identity);
+
+    $detected = array(
+        'raw' => $raw_identity,
+        'field' => '',
+        'value' => '',
+    );
+
+    if ($compacted === '') {
+        return $detected;
+    }
+
+    $email = sanitize_email($compacted);
+    if ($email !== '' && is_email($email)) {
+        $detected['field'] = 'email';
+        $detected['value'] = itstudio_join_normalize_lookup_value('email', $email);
+        return $detected;
+    }
+
+    if (preg_match('/^\d+$/', $compacted)) {
+        $digits = $compacted;
+        $len = strlen($digits);
+
+        if ($len >= 10 && $len <= 12) {
+            $detected['field'] = 'student_id';
+            $detected['value'] = itstudio_join_normalize_lookup_value('student_id', $digits);
+            return $detected;
+        }
+
+        if ($len >= 5 && $len <= 12) {
+            $detected['field'] = 'qq';
+            $detected['value'] = itstudio_join_normalize_lookup_value('qq', $digits);
+            return $detected;
+        }
+
+        return $detected;
+    }
+
+    if (preg_match('/^[\x{4e00}-\x{9fff}·]{2,20}$/u', $compacted)) {
+        $detected['field'] = 'name';
+        $detected['value'] = itstudio_join_normalize_lookup_value('name', $compacted);
+        return $detected;
+    }
+
+    return $detected;
+}
+
 function itstudio_join_parse_result_records($raw) {
     $raw = str_replace(array("\r\n", "\r"), "\n", (string) $raw);
     if ($raw === '') {
@@ -2462,30 +2556,43 @@ function itstudio_join_resolve_progress_lookup($runtime = array(), $request_sour
     $settings = isset($runtime['settings']) && is_array($runtime['settings']) ? $runtime['settings'] : itstudio_join_get_settings();
     $request_source = is_array($request_source) ? $request_source : $_GET;
 
+    $raw_identity = isset($request_source['join_query_identity']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_identity'])) : '';
     $raw_name = isset($request_source['join_query_name']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_name'])) : '';
     $raw_qq = isset($request_source['join_query_qq']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_qq'])) : '';
     $raw_email = isset($request_source['join_query_email']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_email'])) : '';
     $raw_student_id = isset($request_source['join_query_student_id']) ? sanitize_text_field(wp_unslash((string) $request_source['join_query_student_id'])) : '';
 
-    $query = array(
-        'name' => itstudio_join_normalize_lookup_value('name', $raw_name),
-        'qq' => itstudio_join_normalize_lookup_value('qq', $raw_qq),
-        'email' => itstudio_join_normalize_lookup_value('email', $raw_email),
-        'student_id' => itstudio_join_normalize_lookup_value('student_id', $raw_student_id),
-    );
-
-    $has_query_value = false;
-    foreach ($query as $value) {
-        if ($value !== '') {
-            $has_query_value = true;
-            break;
+    if (trim($raw_identity) === '') {
+        foreach (array($raw_name, $raw_qq, $raw_email, $raw_student_id) as $legacy_value) {
+            $legacy_value = trim((string) $legacy_value);
+            if ($legacy_value !== '') {
+                $raw_identity = $legacy_value;
+                break;
+            }
         }
     }
 
-    $submitted = isset($request_source['join_progress_lookup']) || $has_query_value;
+    $detected_identity = itstudio_join_detect_progress_query_identity($raw_identity);
+
+    $query = array(
+        'name' => '',
+        'qq' => '',
+        'email' => '',
+        'student_id' => '',
+    );
+    if ($detected_identity['field'] !== '') {
+        $query[$detected_identity['field']] = (string) $detected_identity['value'];
+    }
+
+    $has_input_value = trim((string) $raw_identity) !== '';
+    $has_query_value = $detected_identity['field'] !== '';
+
+    $submitted = isset($request_source['join_progress_lookup']) || $has_input_value;
     $response = array(
         'submitted' => $submitted,
         'has_query' => $has_query_value,
+        'identity' => $raw_identity,
+        'identity_field' => (string) ($detected_identity['field'] ?? ''),
         'name' => $raw_name,
         'qq' => $raw_qq,
         'email' => $raw_email,
@@ -2499,9 +2606,16 @@ function itstudio_join_resolve_progress_lookup($runtime = array(), $request_sour
         return $response;
     }
 
+    if (!$has_input_value) {
+        $response['message_cn'] = '请输入姓名（中文）/ QQ / 邮箱 / 学号（10~12位数字）。';
+        $response['message_en'] = 'Please enter Name (Chinese) / QQ / Email / Student ID (10-12 digits).';
+        $response['tone'] = 'warning';
+        return $response;
+    }
+
     if (!$has_query_value) {
-        $response['message_cn'] = '请至少填写姓名、QQ、邮箱、学号中的一项。';
-        $response['message_en'] = 'Please fill at least one item: name, QQ, email or student ID.';
+        $response['message_cn'] = '无法识别输入内容，请输入姓名（中文）/ QQ / 邮箱 / 学号（10~12位数字）。';
+        $response['message_en'] = 'Input cannot be recognized. Please enter Name (Chinese) / QQ / Email / Student ID (10-12 digits).';
         $response['tone'] = 'warning';
         return $response;
     }
@@ -3102,8 +3216,67 @@ function itstudio_join_get_frontend_payload() {
                 'endTs' => isset($stage['end_ts']) ? $stage['end_ts'] : null,
             );
         }, (array) ($runtime['stages'] ?? array()))),
+        'progressLookup' => array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'action' => 'itstudio_join_progress_lookup',
+            'nonce' => wp_create_nonce('itstudio_join_progress_lookup'),
+        ),
     );
 }
+
+function itstudio_join_ajax_progress_lookup() {
+    if (!check_ajax_referer('itstudio_join_progress_lookup', 'nonce', false)) {
+        wp_send_json_error(
+            array(
+                'tone' => 'error',
+                'message_cn' => '请求已过期，请刷新页面后重试。',
+                'message_en' => 'Request expired. Please refresh the page and try again.',
+            ),
+            403
+        );
+    }
+
+    $runtime = itstudio_join_get_runtime_data();
+    $request_source = $_POST;
+    if (!isset($request_source['join_progress_lookup'])) {
+        $request_source['join_progress_lookup'] = '1';
+    }
+
+    $lookup = itstudio_join_resolve_progress_lookup($runtime, $request_source);
+    $tone = trim((string) ($lookup['tone'] ?? 'info'));
+    if (!in_array($tone, array('success', 'warning', 'error', 'info'), true)) {
+        $tone = 'info';
+    }
+
+    wp_send_json_success(
+        array(
+            'submitted' => !empty($lookup['submitted']),
+            'has_query' => !empty($lookup['has_query']),
+            'identity' => (string) ($lookup['identity'] ?? ''),
+            'identity_field' => (string) ($lookup['identity_field'] ?? ''),
+            'tone' => $tone,
+            'message_cn' => (string) ($lookup['message_cn'] ?? ''),
+            'message_en' => (string) ($lookup['message_en'] ?? ''),
+        )
+    );
+}
+add_action('wp_ajax_itstudio_join_progress_lookup', 'itstudio_join_ajax_progress_lookup');
+add_action('wp_ajax_nopriv_itstudio_join_progress_lookup', 'itstudio_join_ajax_progress_lookup');
+
+function itstudio_join_force_formidable_ajax_submit($form) {
+    if (!itstudio_is_join_page_context() || !is_object($form)) {
+        return $form;
+    }
+
+    if (!isset($form->options) || !is_array($form->options)) {
+        $form->options = array();
+    }
+
+    $form->options['ajax_submit'] = 1;
+
+    return $form;
+}
+add_filter('frm_pre_display_form', 'itstudio_join_force_formidable_ajax_submit', 20);
 
 function itstudio_join_enqueue_assets() {
     if (!itstudio_is_join_page_context()) {
@@ -3114,7 +3287,7 @@ function itstudio_join_enqueue_assets() {
         'itstudio-join-page',
         get_template_directory_uri() . '/assets/css/join-page.css',
         array('itstudio-content'),
-        '1.1.0'
+        '1.1.1'
     );
 
     wp_enqueue_script(
@@ -3129,7 +3302,7 @@ function itstudio_join_enqueue_assets() {
         'itstudio-join-canvas',
         get_template_directory_uri() . '/assets/js/join-canvas.js',
         array('itstudio-animejs'),
-        '1.1.0',
+        '1.1.1',
         true
     );
 

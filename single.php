@@ -37,7 +37,7 @@
                     <div class="single-article-meta">
                         <span class="single-article-meta-item">
                             <span class="single-article-meta-label" data-cn="发布日期：" data-en="Published: ">Published: </span>
-                            <time class="single-article-meta-value" datetime="<?php echo esc_attr(get_the_date('c')); ?>"><?php echo esc_html(get_the_date('Y年m月d日')); ?></time>
+                            <time class="single-article-meta-value" datetime="<?php echo esc_attr(get_the_date('c')); ?>"><?php echo esc_html(get_the_date('Y-m-d H:i')); ?></time>
                         </span>
                         <span class="single-article-meta-item">
                             <span class="single-article-meta-label" data-cn="作者：" data-en="Author: ">Author: </span>

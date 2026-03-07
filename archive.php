@@ -118,7 +118,7 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                         <span class="news-story-meta-dot" aria-hidden="true">/</span>
                                         <time class="news-story-meta-item" datetime="<?php echo esc_attr(get_the_date('c')); ?>">
                                             <span data-cn="发表于" data-en="Published">Published</span>
-                                            <?php echo esc_html(get_the_date('Y-m-d')); ?>
+                                            <?php echo esc_html(get_the_date('Y-m-d H:i')); ?>
                                         </time>
                                         <span class="news-story-meta-dot" aria-hidden="true">/</span>
                                         <span class="news-story-meta-item">
@@ -215,7 +215,7 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                             <a href="<?php echo esc_url($featured_link); ?>"><?php echo esc_html($featured_title); ?></a>
                                         </h3>
                                         <div class="news-side-meta">
-                                            <time datetime="<?php echo esc_attr(get_the_date('c', $featured_id)); ?>"><?php echo esc_html(get_the_date('Y-m-d', $featured_id)); ?></time>
+                                            <time datetime="<?php echo esc_attr(get_the_date('c', $featured_id)); ?>"><?php echo esc_html(get_the_date('Y-m-d H:i', $featured_id)); ?></time>
                                             <span class="news-side-meta-dot" aria-hidden="true">/</span>
                                             <span>
                                                 <span data-cn="浏览" data-en="Views">Views</span>

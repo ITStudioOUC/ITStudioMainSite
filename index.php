@@ -175,7 +175,7 @@
                                 </h3>
                                 <div class="landing-feed-meta">
                                     <span class="landing-feed-author"><?php echo esc_html(get_the_author()); ?></span>
-                                    <time datetime="<?php echo get_the_date('c'); ?>"><?php echo get_the_date('Y-m-d'); ?></time>
+                                    <time datetime="<?php echo esc_attr(get_the_date('c')); ?>"><?php echo esc_html(get_the_date('Y-m-d H:i')); ?></time>
                                 </div>
                                 <p class="landing-feed-excerpt"><?php echo esc_html($announcement_excerpt); ?></p>
                             </li>
@@ -218,7 +218,7 @@
                                 </h3>
                                 <div class="landing-feed-meta">
                                     <span class="landing-feed-author"><?php echo esc_html(get_the_author()); ?></span>
-                                    <time datetime="<?php echo get_the_date('c'); ?>"><?php echo get_the_date('Y-m-d'); ?></time>
+                                    <time datetime="<?php echo esc_attr(get_the_date('c')); ?>"><?php echo esc_html(get_the_date('Y-m-d H:i')); ?></time>
                                 </div>
                                 <p class="landing-feed-excerpt"><?php echo esc_html($blog_excerpt); ?></p>
                             </li>

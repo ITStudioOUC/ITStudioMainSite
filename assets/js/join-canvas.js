@@ -625,9 +625,239 @@
     stopBoatAnimations();
   });
 
+  function resolveLanguage() {
+    const bootLang = typeof window.__ITSTUDIO_LANG__ === 'string' ? window.__ITSTUDIO_LANG__ : '';
+    const htmlLang = document.documentElement.getAttribute('lang') || '';
+    const lang = (bootLang || htmlLang || 'zh').toLowerCase();
+    return lang.indexOf('en') === 0 ? 'en' : 'zh';
+  }
+
+  function pickLocaleText(cnText, enText) {
+    return resolveLanguage() === 'en'
+      ? (enText || cnText || '')
+      : (cnText || enText || '');
+  }
+
+  function getProgressLookupConfig() {
+    const config = joinData && typeof joinData.progressLookup === 'object' ? joinData.progressLookup : null;
+    if (!config) {
+      return null;
+    }
+    if (!config.ajaxUrl || !config.action || !config.nonce) {
+      return null;
+    }
+    return config;
+  }
+
+  function ensureProgressFeedbackNode(formElement) {
+    const host = formElement.closest('.join-form-content') || formElement.parentElement;
+    if (!host) {
+      return null;
+    }
+
+    let feedback = host.querySelector('.join-progress-query-feedback');
+    if (!feedback) {
+      feedback = document.createElement('p');
+      feedback.className = 'join-progress-query-feedback';
+      feedback.hidden = true;
+      feedback.setAttribute('aria-live', 'polite');
+      host.appendChild(feedback);
+    }
+    return feedback;
+  }
+
+  function setProgressFeedback(feedback, tone, messageCn, messageEn) {
+    if (!feedback) {
+      return;
+    }
+
+    const normalizedTone = ['success', 'warning', 'error', 'info'].indexOf(tone) >= 0 ? tone : 'info';
+    feedback.classList.remove('is-success', 'is-warning', 'is-error', 'is-info');
+    feedback.classList.add(`is-${normalizedTone}`);
+    feedback.dataset.cn = messageCn || '';
+    feedback.dataset.en = messageEn || '';
+    feedback.textContent = pickLocaleText(messageCn, messageEn);
+    feedback.hidden = !(feedback.textContent && feedback.textContent.trim() !== '');
+  }
+
+  function setupProgressLookupAjax() {
+    const formElement = document.querySelector('.join-progress-query-form');
+    if (!formElement || typeof window.fetch !== 'function') {
+      return;
+    }
+
+    const config = getProgressLookupConfig();
+    if (!config) {
+      return;
+    }
+
+    const identityInput = formElement.querySelector('input[name="join_query_identity"]');
+    const submitButton = formElement.querySelector('button[type="submit"], input[type="submit"]');
+    const feedback = ensureProgressFeedbackNode(formElement);
+
+    formElement.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const identity = identityInput ? identityInput.value.trim() : '';
+      const payload = new URLSearchParams();
+      payload.set('action', config.action);
+      payload.set('nonce', config.nonce);
+      payload.set('join_progress_lookup', '1');
+      payload.set('join_query_identity', identity);
+
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.setAttribute('aria-busy', 'true');
+      }
+      setProgressFeedback(feedback, 'info', '查询中，请稍候…', 'Checking, please wait...');
+
+      try {
+        const response = await window.fetch(config.ajaxUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          },
+          body: payload.toString(),
+        });
+
+        const result = await response.json();
+        if (!result || !result.success || !result.data) {
+          throw new Error('invalid_response');
+        }
+
+        const data = result.data;
+        setProgressFeedback(
+          feedback,
+          data.tone || 'info',
+          data.message_cn || '',
+          data.message_en || ''
+        );
+      } catch (error) {
+        setProgressFeedback(
+          feedback,
+          'error',
+          '查询失败，请稍后重试。',
+          'Lookup failed. Please try again later.'
+        );
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.removeAttribute('aria-busy');
+        }
+      }
+    });
+  }
+
+  function detectJoinSubmitIntentFromElement(element) {
+    if (!element) {
+      return '';
+    }
+
+    const name = (element.getAttribute('name') || '').toLowerCase();
+    const value = String(element.value || element.textContent || '').toLowerCase();
+    if (name.indexOf('draft') !== -1 || value.indexOf('draft') !== -1 || value.indexOf('草稿') !== -1) {
+      return 'draft';
+    }
+    return 'submitted';
+  }
+
+  function ensureJoinSubmitNoticeNode() {
+    let notice = document.getElementById('joinSubmitNotice');
+    if (notice) {
+      return notice;
+    }
+
+    notice = document.querySelector('.join-submit-notice');
+    if (notice) {
+      notice.id = 'joinSubmitNotice';
+      return notice;
+    }
+
+    const head = document.querySelector('.join-head');
+    if (!head || !head.parentNode) {
+      return null;
+    }
+
+    notice = document.createElement('p');
+    notice.id = 'joinSubmitNotice';
+    notice.className = 'join-submit-notice';
+    notice.hidden = true;
+    head.parentNode.insertBefore(notice, head.nextSibling);
+    return notice;
+  }
+
+  function showJoinSubmitNotice(intent) {
+    const notice = ensureJoinSubmitNoticeNode();
+    if (!notice) {
+      return;
+    }
+
+    const isDraft = intent === 'draft';
+    const messageCn = isDraft ? '草稿已保存' : '你的报名表单已提交，感谢报名';
+    const messageEn = isDraft ? 'Draft saved.' : 'Your registration form has been submitted. Thank you for applying.';
+    notice.dataset.cn = messageCn;
+    notice.dataset.en = messageEn;
+    notice.textContent = pickLocaleText(messageCn, messageEn);
+    notice.hidden = false;
+  }
+
+  function setupRegistrationSubmitNoticeBridge() {
+    const formElement = document.querySelector('.join-form-content .frm_forms form');
+    if (!formElement) {
+      return;
+    }
+
+    let submitIntent = 'submitted';
+    formElement.addEventListener('click', (event) => {
+      const control = event.target.closest('button, input[type="submit"]');
+      const nextIntent = detectJoinSubmitIntentFromElement(control);
+      if (nextIntent) {
+        submitIntent = nextIntent;
+      }
+    });
+
+    formElement.addEventListener('submit', (event) => {
+      const submitter = event.submitter || null;
+      const nextIntent = detectJoinSubmitIntentFromElement(submitter);
+      if (nextIntent) {
+        submitIntent = nextIntent;
+      }
+    });
+
+    const formHost = formElement.closest('.join-form-content') || formElement.parentElement;
+    if (!formHost) {
+      return;
+    }
+
+    const updateSuccessMessage = () => {
+      const successNode = formHost.querySelector('.frm_message, .frm_success_style, .frm_success');
+      if (!successNode) {
+        return;
+      }
+
+      const lowerText = (successNode.textContent || '').toLowerCase();
+      const resolvedIntent = (lowerText.indexOf('draft') !== -1 || lowerText.indexOf('草稿') !== -1)
+        ? 'draft'
+        : submitIntent;
+
+      const messageCn = resolvedIntent === 'draft' ? '草稿已保存' : '你的报名表单已提交，感谢报名';
+      const messageEn = resolvedIntent === 'draft' ? 'Draft saved.' : 'Your registration form has been submitted. Thank you for applying.';
+      successNode.dataset.cn = messageCn;
+      successNode.dataset.en = messageEn;
+      successNode.textContent = pickLocaleText(messageCn, messageEn);
+      showJoinSubmitNotice(resolvedIntent);
+    };
+
+    const observer = new MutationObserver(updateSuccessMessage);
+    observer.observe(formHost, { childList: true, subtree: true });
+  }
+
   targetProgress = computeTargetProgress();
   setupOverlayEntryAnimation();
   renderStageMarks();
   startWaves();
   animateBoatToTarget();
+  setupProgressLookupAjax();
+  setupRegistrationSubmitNoticeBridge();
 })();

@@ -117,28 +117,6 @@ if ($is_post_request && function_exists('itstudio_join_detect_form_submission_st
             </script>
         <?php endif; ?>
 
-        <section class="join-news-strip" aria-label="Recruitment News">
-            <?php if (!empty($join_feed_items)) : ?>
-                <div class="join-news-strip-track">
-                    <?php foreach ($join_feed_items as $feed_item) : ?>
-                        <?php
-                        $feed_title = isset($feed_item['title']) ? (string) $feed_item['title'] : '';
-                        $feed_excerpt = isset($feed_item['excerpt']) ? (string) $feed_item['excerpt'] : '';
-                        $feed_url = isset($feed_item['url']) ? (string) $feed_item['url'] : '';
-                        ?>
-                        <article class="join-news-item">
-                            <h3 class="join-news-item-title">
-                                <a href="<?php echo esc_url($feed_url); ?>"><?php echo esc_html($feed_title); ?></a>
-                            </h3>
-                            <p class="join-news-item-excerpt"><?php echo esc_html($feed_excerpt); ?></p>
-                        </article>
-                    <?php endforeach; ?>
-                </div>
-            <?php else : ?>
-                <p class="join-news-strip-empty" data-cn="暂无可展示的招新新闻通告" data-en="No recruitment updates available yet.">暂无可展示的招新新闻通告</p>
-            <?php endif; ?>
-        </section>
-
         <section class="join-hero">
             <div class="join-canvas-shell">
                 <div class="join-stage-photo-frame">
@@ -305,109 +283,120 @@ if ($is_post_request && function_exists('itstudio_join_detect_form_submission_st
             </ol>
         </section>
 
-        <?php
+<?php
         $show_registration_form = $is_registration_open;
         $show_progress_query_form = $is_progress_query_open;
         $visible_form_count = ($show_registration_form ? 1 : 0) + ($show_progress_query_form ? 1 : 0);
         ?>
-        <?php if ($visible_form_count > 0) : ?>
-            <section class="join-forms-grid<?php echo $visible_form_count === 1 ? ' is-single' : ''; ?>">
-                <?php if ($show_registration_form) : ?>
-                    <article class="join-form-card">
-                        <header class="join-form-head">
-                            <h2 data-cn="报名表单" data-en="Registration Form">报名表单</h2>
-                            <p data-cn="仅在报名阶段开放" data-en="Available during registration stage only.">仅在报名阶段开放</p>
-                        </header>
-                        <div class="join-form-content">
-                            <?php if (!$has_formidable) : ?>
-                                <p class="join-form-tip" data-cn="未检测到 Formidable Forms 插件 请先启用插件" data-en="Formidable Forms is not active.">未检测到 Formidable Forms 插件 请先启用插件</p>
-                            <?php elseif ($signup_shortcode === '') : ?>
-                                <p class="join-form-tip" data-cn="请在 设置 > 招新设置 中填写报名表单 Shortcode" data-en="Please configure the registration form shortcode in Settings > Recruitment Settings.">请在 设置 > 招新设置 中填写报名表单 Shortcode</p>
-                            <?php else : ?>
-                                <?php echo do_shortcode($signup_shortcode); ?>
-                            <?php endif; ?>
-                        </div>
-                    </article>
-                <?php endif; ?>
+        <section class="join-info-layout">
+                <div class="join-info-main<?php echo $visible_form_count === 0 ? ' is-empty' : ''; ?>">
+                    <?php if ($show_registration_form) : ?>
+                        <h2 class="join-panel-title" data-cn="报名表单" data-en="Registration Form">报名表单</h2>
+                        <article class="join-form-card">
+                            <div class="join-form-content">
+                                <?php if (!$has_formidable) : ?>
+                                    <p class="join-form-tip" data-cn="未检测到 Formidable Forms 插件，请先启用插件" data-en="Formidable Forms is not active.">未检测到 Formidable Forms 插件，请先启用插件</p>
+                                <?php elseif ($signup_shortcode === '') : ?>
+                                    <p class="join-form-tip" data-cn="请在 设置 > 招新设置 中填写报名表单 Shortcode" data-en="Please configure the registration form shortcode in Settings > Recruitment Settings.">请在 设置 > 招新设置 中填写报名表单 Shortcode</p>
+                                <?php else : ?>
+                                    <?php echo do_shortcode($signup_shortcode); ?>
+                                <?php endif; ?>
+                            </div>
+                        </article>
+                    <?php endif; ?>
 
-                <?php if ($show_progress_query_form) : ?>
-                    <article class="join-form-card">
-                        <header class="join-form-head">
-                            <h2 data-cn="录取进度查询" data-en="Admission Progress Lookup">录取进度查询</h2>
-                            <p data-cn="报名结束后至录取结果公布阶段可查询" data-en="Available after registration ends until the final result release stage.">报名结束后至录取结果公布阶段可查询</p>
-                        </header>
-                        <div class="join-form-content">
-                            <form method="get" class="join-progress-query-form">
-                                <div class="join-progress-query-grid">
-                                    <label class="join-progress-query-field">
-                                        <span data-cn="姓名" data-en="Name">姓名</span>
-                                        <input
-                                            type="text"
-                                            name="join_query_name"
-                                            value="<?php echo esc_attr((string) ($progress_lookup['name'] ?? '')); ?>"
-                                            data-cn-placeholder="请输入姓名"
-                                            data-en-placeholder="Enter name"
-                                            placeholder="请输入姓名"
-                                        >
-                                    </label>
-                                    <label class="join-progress-query-field">
-                                        <span data-cn="QQ" data-en="QQ">QQ</span>
-                                        <input
-                                            type="text"
-                                            name="join_query_qq"
-                                            value="<?php echo esc_attr((string) ($progress_lookup['qq'] ?? '')); ?>"
-                                            data-cn-placeholder="请输入QQ"
-                                            data-en-placeholder="Enter QQ"
-                                            placeholder="请输入QQ"
-                                        >
-                                    </label>
-                                    <label class="join-progress-query-field">
-                                        <span data-cn="邮箱" data-en="Email">邮箱</span>
-                                        <input
-                                            type="text"
-                                            name="join_query_email"
-                                            value="<?php echo esc_attr((string) ($progress_lookup['email'] ?? '')); ?>"
-                                            data-cn-placeholder="请输入邮箱"
-                                            data-en-placeholder="Enter email"
-                                            placeholder="请输入邮箱"
-                                        >
-                                    </label>
-                                    <label class="join-progress-query-field">
-                                        <span data-cn="学号" data-en="Student ID">学号</span>
-                                        <input
-                                            type="text"
-                                            name="join_query_student_id"
-                                            value="<?php echo esc_attr((string) ($progress_lookup['student_id'] ?? '')); ?>"
-                                            data-cn-placeholder="请输入学号"
-                                            data-en-placeholder="Enter student ID"
-                                            placeholder="请输入学号"
-                                        >
-                                    </label>
-                                </div>
-                                <div class="join-progress-query-actions">
-                                    <button type="submit" name="join_progress_lookup" value="1" class="join-progress-query-submit" data-cn="查询录取进度" data-en="Check Progress">查询录取进度</button>
-                                </div>
-                            </form>
-                            <?php if (!empty($progress_lookup['submitted'])) : ?>
-                                <?php
-                                $lookup_tone = trim((string) ($progress_lookup['tone'] ?? 'info'));
-                                if (!in_array($lookup_tone, array('success', 'warning', 'error', 'info'), true)) {
-                                    $lookup_tone = 'info';
-                                }
-                                ?>
-                                <p
-                                    class="join-progress-query-feedback is-<?php echo esc_attr($lookup_tone); ?>"
-                                    data-cn="<?php echo esc_attr((string) ($progress_lookup['message_cn'] ?? '')); ?>"
-                                    data-en="<?php echo esc_attr((string) ($progress_lookup['message_en'] ?? '')); ?>"
-                                >
-                                    <?php echo esc_html((string) ($progress_lookup['message_cn'] ?? '')); ?>
-                                </p>
-                            <?php endif; ?>
-                        </div>
-                    </article>
-                <?php endif; ?>
+                    <?php if ($show_progress_query_form) : ?>
+                        <h2 class="join-panel-title" data-cn="录取进度查询" data-en="Admission Progress Lookup">录取进度查询</h2>
+                        <article class="join-form-card">
+                            <div class="join-form-content">
+                                <form method="get" class="join-progress-query-form">
+                                    <div class="join-progress-query-grid">
+                                        <label class="join-progress-query-field">
+                                            <span data-cn="姓名 / QQ / 邮箱 / 学号" data-en="Name / QQ / Email / Student ID">姓名 / QQ / 邮箱 / 学号</span>
+                                            <input
+                                                type="text"
+                                                name="join_query_identity"
+                                                value="<?php echo esc_attr((string) ($progress_lookup['identity'] ?? '')); ?>"
+                                                data-cn-placeholder="请输入中文姓名 / QQ / 邮箱 / 10~12位学号"
+                                                data-en-placeholder="Enter Name / QQ / Email / Student ID (10-12 digits)"
+                                                placeholder="请输入中文姓名 / QQ / 邮箱 / 10~12位学号"
+                                            >
+                                        </label>
+                                    </div>
+                                    <div class="join-progress-query-actions">
+                                        <button type="submit" name="join_progress_lookup" value="1" class="join-progress-query-submit" data-cn="查询录取进度" data-en="Check Progress">查询录取进度</button>
+                                    </div>
+                                </form>
+                                <?php if (!empty($progress_lookup['submitted'])) : ?>
+                                    <?php
+                                    $lookup_tone = trim((string) ($progress_lookup['tone'] ?? 'info'));
+                                    if (!in_array($lookup_tone, array('success', 'warning', 'error', 'info'), true)) {
+                                        $lookup_tone = 'info';
+                                    }
+                                    ?>
+                                    <p
+                                        class="join-progress-query-feedback is-<?php echo esc_attr($lookup_tone); ?>"
+                                        data-cn="<?php echo esc_attr((string) ($progress_lookup['message_cn'] ?? '')); ?>"
+                                        data-en="<?php echo esc_attr((string) ($progress_lookup['message_en'] ?? '')); ?>"
+                                    >
+                                        <?php echo esc_html((string) ($progress_lookup['message_cn'] ?? '')); ?>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                        </article>
+                    <?php endif; ?>
+
+                    <?php if ($visible_form_count === 0) : ?>
+                        <article class="join-form-card join-form-card-placeholder">
+                            <div class="join-form-content">
+                                <p class="join-form-tip" data-cn="当前阶段暂无可操作表单" data-en="No available form in the current stage.">当前阶段暂无可操作表单</p>
+                            </div>
+                        </article>
+                    <?php endif; ?>
+                </div>
+
+                <aside class="join-info-side">
+                    <h2 class="join-panel-title" data-cn="招新资讯" data-en="Related News">招新资讯</h2>
+                    <section class="join-news-strip" aria-label="Related News">
+                        <?php if (!empty($join_feed_items)) : ?>
+                            <div class="join-news-strip-track">
+                                <?php foreach ($join_feed_items as $feed_item) : ?>
+                                    <?php
+                                    $feed_title = isset($feed_item['title']) ? (string) $feed_item['title'] : '';
+                                    $feed_excerpt = isset($feed_item['excerpt']) ? (string) $feed_item['excerpt'] : '';
+                                    $feed_url = isset($feed_item['url']) ? (string) $feed_item['url'] : '';
+                                    $feed_author = isset($feed_item['author']) ? (string) $feed_item['author'] : '';
+                                    $feed_date = isset($feed_item['date']) ? (string) $feed_item['date'] : '';
+                                    $feed_date_iso = isset($feed_item['date_iso']) ? (string) $feed_item['date_iso'] : '';
+                                    ?>
+                                    <article class="join-news-item">
+                                        <h3 class="join-news-item-title">
+                                            <a href="<?php echo esc_url($feed_url); ?>"><?php echo esc_html($feed_title); ?></a>
+                                        </h3>
+                                        <div class="join-news-item-meta">
+                                            <?php if ($feed_author !== '') : ?>
+                                                <span class="join-news-item-meta-author">
+                                                    <span data-cn="发布者" data-en="Author">发布者</span>
+                                                    <?php echo esc_html($feed_author); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if ($feed_date !== '') : ?>
+                                                <time class="join-news-item-meta-time" datetime="<?php echo esc_attr($feed_date_iso !== '' ? $feed_date_iso : $feed_date); ?>">
+                                                    <span data-cn="时间" data-en="Time">时间</span>
+                                                    <?php echo esc_html($feed_date); ?>
+                                                </time>
+                                            <?php endif; ?>
+                                        </div>
+                                        <p class="join-news-item-excerpt"><?php echo esc_html($feed_excerpt); ?></p>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else : ?>
+                            <p class="join-news-strip-empty" data-cn="暂无可展示的招新新闻通告" data-en="No recruitment updates available yet.">暂无可展示的招新新闻通告</p>
+                        <?php endif; ?>
+                    </section>
+                </aside>
             </section>
-        <?php endif; ?>
 
         <?php if ($is_post_request) : ?>
             <script>
