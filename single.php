@@ -60,8 +60,15 @@
                 ?>
                     <footer class="single-article-tags">
                         <?php foreach (array_slice($tags, 0, 8) as $tag) : ?>
-                            <?php $tag_link = get_term_link($tag); ?>
-                            <?php if (!is_wp_error($tag_link)) : ?>
+                            <?php
+                            $tag_link = function_exists('itstudio_get_archive_tag_filter_url')
+                                ? itstudio_get_archive_tag_filter_url($tag, $post_type)
+                                : '';
+                            if ($tag_link === '') {
+                                $tag_link = get_term_link($tag);
+                            }
+                            ?>
+                            <?php if (!is_wp_error($tag_link) && !empty($tag_link)) : ?>
                                 <a class="single-article-tag" href="<?php echo esc_url($tag_link); ?>">#<?php echo esc_html($tag->name); ?></a>
                             <?php endif; ?>
                         <?php endforeach; ?>

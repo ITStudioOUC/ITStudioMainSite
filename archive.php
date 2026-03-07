@@ -10,11 +10,14 @@ $is_itstudio_content_page = $is_itstudio_news_page || $is_itstudio_notice_page;
 <?php if ($is_itstudio_content_page) : ?>
 <?php
 $keyword = isset($_GET['q']) ? sanitize_text_field(wp_unslash($_GET['q'])) : '';
+$date_from = isset($_GET['date_from']) ? sanitize_text_field(wp_unslash($_GET['date_from'])) : '';
+$date_to = isset($_GET['date_to']) ? sanitize_text_field(wp_unslash($_GET['date_to'])) : '';
+$tag_slug = isset($_GET['tag']) ? sanitize_title(wp_unslash($_GET['tag'])) : '';
 $paged = max(1, (int) get_query_var('paged'), (int) get_query_var('page'));
 $active_post_type = $is_itstudio_news_page ? 'news' : 'announcement';
 $archive_url = $is_itstudio_news_page ? get_post_type_archive_link('news') : get_post_type_archive_link('announcement');
 if (!$archive_url) {
-    $archive_url = $is_itstudio_news_page ? home_url('/news') : home_url('/announcements');
+    $archive_url = $is_itstudio_news_page ? home_url('/news/') : home_url('/announcement/');
 }
 
 $default_cover_url = get_template_directory_uri() . '/resources/it_logo_2024.svg';
@@ -26,16 +29,74 @@ $empty_en = $is_itstudio_news_page ? 'No news found.' : 'No announcements found.
 $side_title_cn = $is_itstudio_news_page ? '要闻' : '重要公告';
 $side_title_en = $is_itstudio_news_page ? 'Top Stories' : 'Important Announcements';
 
-$list_query = new WP_Query(array(
+$date_query = array();
+$date_from_valid = '';
+$date_to_valid = '';
+if ($date_from !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_from)) {
+    $date_from_valid = $date_from . ' 00:00:00';
+}
+if ($date_to !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to)) {
+    $date_to_valid = $date_to . ' 23:59:59';
+}
+if ($date_from_valid !== '' || $date_to_valid !== '') {
+    $range = array(
+        'inclusive' => true,
+        'column' => 'post_date',
+    );
+    if ($date_from_valid !== '') {
+        $range['after'] = $date_from_valid;
+    }
+    if ($date_to_valid !== '') {
+        $range['before'] = $date_to_valid;
+    }
+    $date_query[] = $range;
+}
+
+if ($tag_slug !== '') {
+    $resolved_tag = get_term_by('slug', $tag_slug, 'post_tag');
+    if (!($resolved_tag instanceof WP_Term)) {
+        $tag_slug = '';
+    }
+}
+
+$available_tags = get_terms(array(
+    'taxonomy' => 'post_tag',
+    'hide_empty' => true,
+    'orderby' => 'name',
+    'order' => 'ASC',
+));
+if (is_wp_error($available_tags)) {
+    $available_tags = array();
+}
+
+$list_query_args = array(
     'post_type' => $active_post_type,
     'post_status' => 'publish',
     'posts_per_page' => 10,
     'paged' => $paged,
-    's' => $keyword,
     'ignore_sticky_posts' => true,
     'orderby' => 'date',
     'order' => 'DESC',
-));
+    'suppress_filters' => false,
+);
+if ($keyword !== '') {
+    $list_query_args['itstudio_archive_extend_search'] = true;
+    $list_query_args['itstudio_archive_keyword'] = $keyword;
+}
+if (!empty($date_query)) {
+    $list_query_args['date_query'] = $date_query;
+}
+if ($tag_slug !== '') {
+    $list_query_args['tax_query'] = array(
+        array(
+            'taxonomy' => 'post_tag',
+            'field' => 'slug',
+            'terms' => array($tag_slug),
+        ),
+    );
+}
+
+$list_query = new WP_Query($list_query_args);
 
 $featured_query = new WP_Query(array(
     'post_type' => $active_post_type,
@@ -75,23 +136,59 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
             <h1 class="news-archive-title" data-cn="<?php echo esc_attr($title_cn); ?>" data-en="<?php echo esc_attr($title_en); ?>"><?php echo esc_html($title_en); ?></h1>
         </header>
 
-        <div class="news-archive-tools news-archive-tools-single">
+        <div class="news-archive-tools">
+            <form class="news-archive-filter-form" method="get" action="<?php echo esc_url($archive_url); ?>">
+                <?php if ($keyword !== '') : ?>
+                    <input type="hidden" name="q" value="<?php echo esc_attr($keyword); ?>">
+                <?php endif; ?>
+                <div class="news-archive-filter-fields">
+                    <label class="news-archive-filter-field">
+                        <span data-cn="&#21457;&#24067;&#26102;&#38388;&#36215;" data-en="From">&#21457;&#24067;&#26102;&#38388;&#36215;</span>
+                        <input type="date" name="date_from" value="<?php echo esc_attr($date_from); ?>">
+                    </label>
+                    <label class="news-archive-filter-field">
+                        <span data-cn="&#21457;&#24067;&#26102;&#38388;&#27490;" data-en="To">&#21457;&#24067;&#26102;&#38388;&#27490;</span>
+                        <input type="date" name="date_to" value="<?php echo esc_attr($date_to); ?>">
+                    </label>
+                    <label class="news-archive-filter-field news-archive-filter-tag">
+                        <span data-cn="&#26631;&#31614;" data-en="Tag">&#26631;&#31614;</span>
+                        <select name="tag">
+                            <option value="" data-cn="&#20840;&#37096;&#26631;&#31614;" data-en="All tags">&#20840;&#37096;&#26631;&#31614;</option>
+                            <?php foreach ($available_tags as $tag_option) : ?>
+                                <option value="<?php echo esc_attr($tag_option->slug); ?>" <?php selected($tag_slug, $tag_option->slug); ?>>
+                                    <?php echo esc_html($tag_option->name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                </div>
+                <button type="submit" data-cn="&#31579;&#36873;" data-en="Apply">&#31579;&#36873;</button>
+            </form>
+
             <form class="news-archive-search" method="get" action="<?php echo esc_url($archive_url); ?>">
+                <?php if ($date_from !== '') : ?>
+                    <input type="hidden" name="date_from" value="<?php echo esc_attr($date_from); ?>">
+                <?php endif; ?>
+                <?php if ($date_to !== '') : ?>
+                    <input type="hidden" name="date_to" value="<?php echo esc_attr($date_to); ?>">
+                <?php endif; ?>
+                <?php if ($tag_slug !== '') : ?>
+                    <input type="hidden" name="tag" value="<?php echo esc_attr($tag_slug); ?>">
+                <?php endif; ?>
                 <input
                     type="search"
                     name="q"
                     value="<?php echo esc_attr($keyword); ?>"
-                    placeholder="<?php esc_attr_e('Search posts...', 'itstudio'); ?>"
-                    aria-label="<?php esc_attr_e('Search posts', 'itstudio'); ?>"
-                    data-cn-placeholder="搜索文章..."
-                    data-en-placeholder="Search posts..."
-                    data-cn-aria-label="搜索文章"
-                    data-en-aria-label="Search posts"
+                    placeholder="<?php esc_attr_e('Search title or author...', 'itstudio'); ?>"
+                    aria-label="<?php esc_attr_e('Search title or author', 'itstudio'); ?>"
+                    data-cn-placeholder="搜索文章或发布者..."
+                    data-en-placeholder="Search title or author..."
+                    data-cn-aria-label="搜索文章或发布者"
+                    data-en-aria-label="Search title or author"
                 >
-                <button type="submit" data-cn="搜索" data-en="Search">Search</button>
+                <button type="submit" data-cn="搜索" data-en="Search">搜索</button>
             </form>
         </div>
-
         <div class="news-archive-layout">
             <section class="news-main-column">
                 <?php if ($list_query->have_posts()) : ?>
@@ -138,8 +235,15 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                         <span class="news-story-tag-label" data-cn="标签" data-en="Tags">Tags</span>
                                         <?php if (!empty($tags) && !is_wp_error($tags)) : ?>
                                             <?php foreach (array_slice($tags, 0, 5) as $tag) : ?>
-                                                <?php $tag_link = get_term_link($tag); ?>
-                                                <?php if (!is_wp_error($tag_link)) : ?>
+                                                <?php
+                                                $tag_link = function_exists('itstudio_get_archive_tag_filter_url')
+                                                    ? itstudio_get_archive_tag_filter_url($tag, $active_post_type)
+                                                    : '';
+                                                if ($tag_link === '') {
+                                                    $tag_link = get_term_link($tag);
+                                                }
+                                                ?>
+                                                <?php if (!is_wp_error($tag_link) && !empty($tag_link)) : ?>
                                                     <a class="news-story-tag" href="<?php echo esc_url($tag_link); ?>">#<?php echo esc_html($tag->name); ?></a>
                                                 <?php endif; ?>
                                             <?php endforeach; ?>
@@ -175,6 +279,9 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
                                 'add_args' => array_filter(
                                     array(
                                         'q' => $keyword,
+                                        'date_from' => $date_from,
+                                        'date_to' => $date_to,
+                                        'tag' => $tag_slug,
                                     ),
                                     static function ($value) {
                                         return $value !== '';
@@ -305,3 +412,4 @@ $featured_ids = array_slice(array_values(array_unique($featured_ids)), 0, 4);
 <?php endif; ?>
 
 <?php get_footer(); ?>
+

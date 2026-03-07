@@ -1252,6 +1252,111 @@ function itstudio_get_post_excerpt_chars($post_id, $limit = 200) {
     return wp_html_excerpt($excerpt, $limit, '...');
 }
 
+function itstudio_get_archive_url_by_post_type($post_type) {
+    $post_type = sanitize_key((string) $post_type);
+    if ($post_type === '') {
+        return home_url('/');
+    }
+
+    $archive_url = get_post_type_archive_link($post_type);
+    if ($archive_url) {
+        return $archive_url;
+    }
+
+    if ($post_type === 'news') {
+        return home_url('/news/');
+    }
+
+    if ($post_type === 'announcement') {
+        return home_url('/announcement/');
+    }
+
+    return home_url('/');
+}
+
+function itstudio_get_archive_tag_filter_url($term, $post_type) {
+    $term_obj = null;
+    if ($term instanceof WP_Term) {
+        $term_obj = $term;
+    } else {
+        $term_obj = get_term($term, 'post_tag');
+    }
+
+    if (!($term_obj instanceof WP_Term) || is_wp_error($term_obj)) {
+        return '';
+    }
+
+    $post_type = sanitize_key((string) $post_type);
+    if (!in_array($post_type, array('news', 'announcement'), true)) {
+        return '';
+    }
+
+    $archive_url = itstudio_get_archive_url_by_post_type($post_type);
+    return add_query_arg(
+        array(
+            'tag' => $term_obj->slug,
+        ),
+        $archive_url
+    );
+}
+
+function itstudio_archive_extended_search_enabled($query) {
+    if (!($query instanceof WP_Query)) {
+        return false;
+    }
+
+    if (!$query->get('itstudio_archive_extend_search')) {
+        return false;
+    }
+
+    $keyword = trim((string) $query->get('itstudio_archive_keyword'));
+    return $keyword !== '';
+}
+
+function itstudio_archive_extended_search_join($join, $query) {
+    if (!itstudio_archive_extended_search_enabled($query)) {
+        return $join;
+    }
+
+    global $wpdb;
+    if (strpos($join, $wpdb->users) !== false) {
+        return $join;
+    }
+
+    return $join . " LEFT JOIN {$wpdb->users} ON ({$wpdb->posts}.post_author = {$wpdb->users}.ID) ";
+}
+add_filter('posts_join', 'itstudio_archive_extended_search_join', 10, 2);
+
+function itstudio_archive_extended_search_where($where, $query) {
+    if (!itstudio_archive_extended_search_enabled($query)) {
+        return $where;
+    }
+
+    global $wpdb;
+    $keyword = trim((string) $query->get('itstudio_archive_keyword'));
+    $like = '%' . $wpdb->esc_like($keyword) . '%';
+
+    $search_sql = $wpdb->prepare(
+        " AND (
+            {$wpdb->posts}.post_title LIKE %s
+            OR {$wpdb->posts}.post_excerpt LIKE %s
+            OR {$wpdb->posts}.post_content LIKE %s
+            OR {$wpdb->users}.display_name LIKE %s
+            OR {$wpdb->users}.user_login LIKE %s
+            OR {$wpdb->users}.user_nicename LIKE %s
+        )",
+        $like,
+        $like,
+        $like,
+        $like,
+        $like,
+        $like
+    );
+
+    return $where . $search_sql;
+}
+add_filter('posts_where', 'itstudio_archive_extended_search_where', 10, 2);
+
 function itstudio_is_probably_bot_request() {
     $user_agent = strtolower(trim((string) ($_SERVER['HTTP_USER_AGENT'] ?? '')));
     if ($user_agent === '') {
@@ -2607,15 +2712,15 @@ function itstudio_join_resolve_progress_lookup($runtime = array(), $request_sour
     }
 
     if (!$has_input_value) {
-        $response['message_cn'] = '请输入姓名（中文）/ QQ / 邮箱 / 学号（10~12位数字）。';
-        $response['message_en'] = 'Please enter Name (Chinese) / QQ / Email / Student ID (10-12 digits).';
+        $response['message_cn'] = '请输入姓名（中文）/ QQ / 邮箱 / 学号。';
+        $response['message_en'] = 'Please enter Name (Chinese) / QQ / Email / Student ID.';
         $response['tone'] = 'warning';
         return $response;
     }
 
     if (!$has_query_value) {
-        $response['message_cn'] = '无法识别输入内容，请输入姓名（中文）/ QQ / 邮箱 / 学号（10~12位数字）。';
-        $response['message_en'] = 'Input cannot be recognized. Please enter Name (Chinese) / QQ / Email / Student ID (10-12 digits).';
+        $response['message_cn'] = '无法识别输入内容，请输入姓名（中文）/ QQ / 邮箱 / 学号。';
+        $response['message_en'] = 'Input cannot be recognized. Please enter Name (Chinese) / QQ / Email / Student ID.';
         $response['tone'] = 'warning';
         return $response;
     }

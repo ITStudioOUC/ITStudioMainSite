@@ -312,14 +312,13 @@ if ($is_post_request && function_exists('itstudio_join_detect_form_submission_st
                                 <form method="get" class="join-progress-query-form">
                                     <div class="join-progress-query-grid">
                                         <label class="join-progress-query-field">
-                                            <span data-cn="姓名 / QQ / 邮箱 / 学号" data-en="Name / QQ / Email / Student ID">姓名 / QQ / 邮箱 / 学号</span>
                                             <input
                                                 type="text"
                                                 name="join_query_identity"
                                                 value="<?php echo esc_attr((string) ($progress_lookup['identity'] ?? '')); ?>"
-                                                data-cn-placeholder="请输入中文姓名 / QQ / 邮箱 / 10~12位学号"
-                                                data-en-placeholder="Enter Name / QQ / Email / Student ID (10-12 digits)"
-                                                placeholder="请输入中文姓名 / QQ / 邮箱 / 10~12位学号"
+                                                data-cn-placeholder="请输入中文姓名 / QQ / 邮箱 / 学号"
+                                                data-en-placeholder="Enter Name / QQ / Email / Student ID"
+                                                placeholder="请输入中文姓名 / QQ / 邮箱 / 学号"
                                             >
                                         </label>
                                     </div>
