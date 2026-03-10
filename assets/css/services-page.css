@@ -110,20 +110,65 @@
 
 .services-directory-card {
   display: block;
-  border: 1px solid var(--border-default);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
-  padding: 12px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border-default) 86%, transparent);
+  border-radius: 6px;
+  background:
+    linear-gradient(
+      132deg,
+      color-mix(in srgb, var(--color-primary) 10%, transparent) 0%,
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg-card) 92%, #0f1726 8%) 0%,
+      color-mix(in srgb, var(--bg-card) 98%, transparent) 100%
+    );
+  padding: 12px 12px 11px;
   min-height: 0;
   color: inherit;
   text-decoration: none;
-  transition: transform var(--duration-fast) var(--ease-in-out), border-color var(--duration-fast) var(--ease-in-out), box-shadow var(--duration-fast) var(--ease-in-out);
+  box-shadow:
+    0 14px 26px -22px color-mix(in srgb, #000000 68%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 8%, transparent);
+  transition: transform var(--duration-fast) var(--ease-in-out), border-color var(--duration-fast) var(--ease-in-out), box-shadow var(--duration-fast) var(--ease-in-out), background var(--duration-fast) var(--ease-in-out);
+}
+
+.services-directory-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 64%, transparent), transparent)
+      top left / 58px 1px no-repeat,
+    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 64%, transparent), transparent)
+      top left / 1px 24px no-repeat;
+  opacity: 0.5;
 }
 
 .services-directory-card:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--color-primary) 52%, var(--border-default) 48%);
-  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--color-primary) 58%, var(--border-default) 42%);
+  box-shadow:
+    0 20px 32px -24px color-mix(in srgb, #000000 72%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 10%, transparent);
+  background:
+    linear-gradient(
+      132deg,
+      color-mix(in srgb, var(--color-primary) 14%, transparent) 0%,
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg-card) 90%, #0f1726 10%) 0%,
+      color-mix(in srgb, var(--bg-card) 97%, transparent) 100%
+    );
+}
+
+.services-directory-card:hover .services-directory-name {
+  color: color-mix(in srgb, var(--text-primary) 82%, var(--color-primary) 18%);
 }
 
 .services-directory-card-head {
@@ -135,7 +180,7 @@
 .services-directory-icon-wrap {
   width: 54px;
   height: 54px;
-  border-radius: 12px;
+  border-radius: 6px;
   border: none;
   background: transparent;
   overflow: hidden;
@@ -171,6 +216,39 @@
   display: inline-block;
   font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+.services-directory-access {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 7px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 62%, var(--border-default) 38%);
+  background: color-mix(in srgb, var(--color-primary) 20%, var(--bg-card) 80%);
+  color: var(--color-primary);
+}
+
+.services-directory-access::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.9;
+}
+
+.services-directory-card.is-campus-only .services-directory-card-head {
+  padding-right: 98px;
 }
 
 .services-directory-desc {
@@ -276,5 +354,16 @@
 
   .services-directory-card {
     min-height: 0;
+  }
+
+  .services-directory-access {
+    top: 8px;
+    right: 8px;
+    font-size: 0.64rem;
+    padding: 2px 6px;
+  }
+
+  .services-directory-card.is-campus-only .services-directory-card-head {
+    padding-right: 88px;
   }
 }

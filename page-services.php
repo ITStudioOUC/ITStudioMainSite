@@ -47,6 +47,7 @@ if ($services_query->have_posts()) {
             'excerpt_cn' => $i18n_content['excerpt_cn'],
             'excerpt_en' => $i18n_content['excerpt_en'],
             'has_thumb' => has_post_thumbnail($service_id),
+            'is_campus_only' => function_exists('itstudio_is_service_campus_only') ? itstudio_is_service_campus_only($service_id) : false,
             'term_name_cn' => '',
             'term_name_en' => '',
         );
@@ -158,7 +159,11 @@ if (!empty($uncategorized_items)) {
 
                             <div class="services-directory-grid">
                                 <?php foreach ($section['items'] as $item) : ?>
-                                    <a class="services-directory-card" href="<?php echo esc_url($item['url']); ?>" target="_blank" rel="noopener noreferrer">
+                                    <?php $card_classes = 'services-directory-card' . (!empty($item['is_campus_only']) ? ' is-campus-only' : ''); ?>
+                                    <a class="<?php echo esc_attr($card_classes); ?>" href="<?php echo esc_url($item['url']); ?>" target="_blank" rel="noopener noreferrer">
+                                        <?php if (!empty($item['is_campus_only'])) : ?>
+                                            <span class="services-directory-access services-directory-access-campus" data-cn="仅校内访问" data-en="Campus-only">仅校内访问</span>
+                                        <?php endif; ?>
                                         <div class="services-directory-card-head">
                                             <div class="services-directory-icon-wrap">
                                                 <?php if ($item['has_thumb']) : ?>

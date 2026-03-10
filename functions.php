@@ -655,6 +655,10 @@ function itstudio_get_service_excerpt_en_meta_key() {
     return '_itstudio_service_excerpt_en';
 }
 
+function itstudio_get_service_campus_only_meta_key() {
+    return '_itstudio_service_campus_only';
+}
+
 function itstudio_get_service_category_name_cn_meta_key() {
     return 'itstudio_service_category_name_cn';
 }
@@ -756,6 +760,7 @@ function itstudio_render_service_link_meta_box($post) {
     $title_en = (string) get_post_meta($post->ID, itstudio_get_service_title_en_meta_key(), true);
     $excerpt_cn = (string) get_post_meta($post->ID, itstudio_get_service_excerpt_cn_meta_key(), true);
     $excerpt_en = (string) get_post_meta($post->ID, itstudio_get_service_excerpt_en_meta_key(), true);
+    $is_campus_only = itstudio_is_service_campus_only($post->ID);
     wp_nonce_field('itstudio_save_service_meta', 'itstudio_service_meta_nonce');
     ?>
     <p>
@@ -824,6 +829,18 @@ function itstudio_render_service_link_meta_box($post) {
     <p class="description">
         <?php esc_html_e('支持分别填写中英文名称与简介；未填写时会回退到标题/摘要。', 'itstudio'); ?>
     </p>
+    <p>
+        <label for="itstudio_service_campus_only">
+            <input
+                type="checkbox"
+                id="itstudio_service_campus_only"
+                name="itstudio_service_campus_only"
+                value="1"
+                <?php checked($is_campus_only); ?>
+            >
+            <?php esc_html_e('是否为校内服务（勾选后前台显示“仅校内访问”）', 'itstudio'); ?>
+        </label>
+    </p>
     <?php
 }
 
@@ -862,6 +879,14 @@ function itstudio_save_service_meta($post_id) {
         } else {
             update_post_meta($post_id, $meta_key, $value);
         }
+    }
+
+    $campus_only_meta_key = itstudio_get_service_campus_only_meta_key();
+    $is_campus_only = isset($_POST['itstudio_service_campus_only']) && (string) wp_unslash($_POST['itstudio_service_campus_only']) === '1';
+    if ($is_campus_only) {
+        update_post_meta($post_id, $campus_only_meta_key, '1');
+    } else {
+        delete_post_meta($post_id, $campus_only_meta_key);
     }
 
     $url_meta_key = itstudio_get_service_url_meta_key();
@@ -960,6 +985,15 @@ function itstudio_get_service_target_url($service_id) {
     }
 
     return (string) get_permalink($service_id);
+}
+
+function itstudio_is_service_campus_only($service_id) {
+    $service_id = (int) $service_id;
+    if ($service_id <= 0) {
+        return false;
+    }
+
+    return (string) get_post_meta($service_id, itstudio_get_service_campus_only_meta_key(), true) === '1';
 }
 
 function itstudio_service_admin_columns($columns) {
