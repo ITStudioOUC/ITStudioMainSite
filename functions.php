@@ -231,8 +231,8 @@ add_filter('body_class', 'itstudio_intro_body_class');
 function itstudio_custom_post_types() {
     register_post_type('announcement', array(
         'labels' => array(
-            'name' => __('Announcements', 'itstudio'),
-            'singular_name' => __('Announcement', 'itstudio'),
+            'name' => __('公告', 'itstudio'),
+            'singular_name' => __('公告', 'itstudio'),
         ),
         'public' => true,
         'has_archive' => true,
@@ -244,8 +244,8 @@ function itstudio_custom_post_types() {
 
     register_post_type('news', array(
         'labels' => array(
-            'name' => __('News', 'itstudio'),
-            'singular_name' => __('News', 'itstudio'),
+            'name' => __('新闻', 'itstudio'),
+            'singular_name' => __('新闻', 'itstudio'),
         ),
         'public' => true,
         'has_archive' => 'news',
